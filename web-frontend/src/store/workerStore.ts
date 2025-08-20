@@ -4,7 +4,6 @@ import { workerService } from '../services';
 
 export const useWorkerStore = create<WorkerState & {
   fetchWorkers: () => Promise<void>;
-  fetchWorker: (id: number) => Promise<void>;
   createWorker: (data: { name: string; notes: string }) => Promise<void>;
   updateWorker: (id: number, data: { name: string; notes: string }) => Promise<void>;
   deleteWorker: (id: number) => Promise<void>;
@@ -20,17 +19,7 @@ export const useWorkerStore = create<WorkerState & {
     set({ loading: true, error: null });
     try {
       const workers = await workerService.getWorkers();
-      set({ workers, loading: false });
-    } catch (error) {
-      set({ error: (error as Error).message, loading: false });
-    }
-  },
-
-  fetchWorker: async (id: number) => {
-    set({ loading: true, error: null });
-    try {
-      const worker = await workerService.getWorker(id);
-      set({ currentWorker: worker, loading: false });
+      set({ workers: workers || [], loading: false }); // 处理 data 可能为 null 的情况
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
     }
@@ -45,7 +34,10 @@ export const useWorkerStore = create<WorkerState & {
         loading: false,
       }));
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, loading: false });
+      // **重新抛出错误，让组件可以捕获**
+      throw new Error(errorMessage);
     }
   },
 
@@ -61,7 +53,10 @@ export const useWorkerStore = create<WorkerState & {
         loading: false,
       }));
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, loading: false });
+      // **重新抛出错误**
+      throw new Error(errorMessage);
     }
   },
 
@@ -74,7 +69,10 @@ export const useWorkerStore = create<WorkerState & {
         loading: false,
       }));
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, loading: false });
+       // **重新抛出错误**
+      throw new Error(errorMessage);
     }
   },
 

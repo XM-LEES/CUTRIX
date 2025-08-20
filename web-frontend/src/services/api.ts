@@ -16,7 +16,6 @@ class ApiService {
     // 请求拦截器
     this.instance.interceptors.request.use(
       (config) => {
-        // 可以在这里添加token等
         return config;
       },
       (error) => {
@@ -30,8 +29,10 @@ class ApiService {
         return response;
       },
       (error) => {
-        console.error('API Error:', error);
-        return Promise.reject(error);
+        // 优先返回后端自定义的错误信息
+        const errorMessage = error.response?.data?.error || error.message || 'Request failed';
+        console.error('API Error:', errorMessage);
+        return Promise.reject(new Error(errorMessage));
       }
     );
   }
@@ -39,8 +40,9 @@ class ApiService {
   // 通用GET请求
   async get<T>(url: string): Promise<T> {
     const response = await this.instance.get<APIResponse<T>>(url);
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    // **修改**: 只要 success 为 true 就认为成功，即使 data 不存在或为 null/[]
+    if (response.data.success) {
+      return response.data.data as T;
     }
     throw new Error(response.data.error || 'Request failed');
   }
@@ -48,8 +50,9 @@ class ApiService {
   // 通用POST请求
   async post<T>(url: string, data: any): Promise<T> {
     const response = await this.instance.post<APIResponse<T>>(url, data);
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    // **修改**: 只要 success 为 true 就认为成功
+    if (response.data.success) {
+      return response.data.data as T;
     }
     throw new Error(response.data.error || 'Request failed');
   }
@@ -57,8 +60,9 @@ class ApiService {
   // 通用PUT请求
   async put<T>(url: string, data: any): Promise<T> {
     const response = await this.instance.put<APIResponse<T>>(url, data);
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    // **修改**: 只要 success 为 true 就认为成功
+    if (response.data.success) {
+      return response.data.data as T;
     }
     throw new Error(response.data.error || 'Request failed');
   }
@@ -66,8 +70,9 @@ class ApiService {
   // 通用DELETE请求
   async delete<T>(url: string): Promise<T> {
     const response = await this.instance.delete<APIResponse<T>>(url);
-    if (response.data.success && response.data.data) {
-      return response.data.data;
+    // **修改**: 只要 success 为 true 就认为成功，data 字段不是必须的
+    if (response.data.success) {
+      return (response.data.data ?? null) as T; // 返回 data 或 null
     }
     throw new Error(response.data.error || 'Request failed');
   }
@@ -80,7 +85,7 @@ class ApiService {
 
 // 创建API实例
 export const apiService = new ApiService({
-  baseURL: '/api', // Vite 代理会处理这个路径
+  baseURL: '/api',
   timeout: 10000,
 });
 
