@@ -60,3 +60,6 @@ export const workerService = {
   deleteWorker: (id: number) => apiService.delete(`/workers/${id}`),
   getWorkerTasks: (workerId: number) => apiService.get<ProductionTask[]>(`/workers/${workerId}/tasks`),
 };
+
+// 登陆服务
+export { authService } from './authService';

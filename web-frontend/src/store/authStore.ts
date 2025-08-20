@@ -1,48 +1,48 @@
 import { create } from 'zustand';
-import { apiService } from '../services/api'; // 假设 apiService 已导出
+import { authService } from '../services/authService';
+import type { AuthState, User, LoginRequest } from '../types';
 
-interface User {
-  id: number;
-  name: string;
-  role: 'admin' | 'worker';
-}
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  login: (username: string, password?: string) => Promise<void>;
+type AuthActions = {
+  login: (data: LoginRequest) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
-}
+};
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
+export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   isAuthenticated: false,
+  user: null,
+  loading: false,
+  error: null,
 
-  login: async (username, password) => {
-    const { token } = await apiService.post<{ token: string }>('/auth/login', { username, password });
-    // 在真实应用中，需要解码JWT来获取用户信息
-    // 这里我们先简化处理
-    const user: User = { id: 1, name: username, role: username === 'admin' ? 'admin' : 'worker' };
-    
-    localStorage.setItem('token', token);
-    set({ token, user, isAuthenticated: true });
+  login: async (data) => {
+    set({ loading: true, error: null });
+    try {
+      const user = await authService.login(data);
+      set({ isAuthenticated: true, user, loading: false });
+      // 将用户信息存储到 localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, loading: false, isAuthenticated: false, user: null });
+      throw new Error(errorMessage);
+    }
   },
 
   logout: () => {
-    localStorage.removeItem('token');
-    set({ token: null, user: null, isAuthenticated: false });
+    set({ isAuthenticated: false, user: null });
+    localStorage.removeItem('user');
   },
 
   checkAuth: () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // 同样，这里应该解码token
-      // 简化处理：
-      const user: User = { id: 1, name: 'Logged In User', role: 'admin' }; // 假设
-      set({ token, user, isAuthenticated: true });
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr) as User;
+        set({ isAuthenticated: true, user });
+      } catch (e) {
+        set({ isAuthenticated: false, user: null });
+        localStorage.removeItem('user');
+      }
     }
   },
 }));

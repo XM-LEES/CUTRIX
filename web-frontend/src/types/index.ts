@@ -157,3 +157,22 @@ export interface ApiConfig {
   baseURL: string;
   timeout: number;
 }
+
+// 认证和用户相关类型
+export interface User {
+  worker_id: number;
+  name: string;
+  username: string;
+  role: 'admin' | 'worker';
+  notes: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password?: string; // 密码可选
+}
+
+export interface AuthState extends AppState {
+  isAuthenticated: boolean;
+  user: User | null;
+}

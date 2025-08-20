@@ -12,6 +12,7 @@ import (
 type WorkerRepository interface {
 	GetByID(id int) (*models.Worker, error)
 	GetByName(name string) (*models.Worker, error)
+	GetByUsername(username string) (*models.Worker, error) // <-- 新增此行
 	GetAll() ([]*models.Worker, error)
 	Create(worker *models.CreateWorkerRequest) (*models.Worker, error)
 	Update(id int, worker *models.UpdateWorkerRequest) (*models.Worker, error)
@@ -57,6 +58,19 @@ func (r *workerRepository) GetByName(name string) (*models.Worker, error) {
 		return nil, fmt.Errorf("failed to get worker: %w", err)
 	}
 
+	return &worker, nil
+}
+
+func (r *workerRepository) GetByUsername(username string) (*models.Worker, error) {
+	var worker models.Worker
+	query := `SELECT worker_id, name, username, password_hash, role, is_active, COALESCE(notes, '') as notes FROM Workers WHERE username = $1`
+	err := r.db.Get(&worker, query, username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("worker not found")
+		}
+		return nil, fmt.Errorf("failed to get worker by username: %w", err)
+	}
 	return &worker, nil
 }
 
