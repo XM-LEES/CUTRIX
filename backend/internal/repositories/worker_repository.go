@@ -12,7 +12,7 @@ import (
 type WorkerRepository interface {
 	GetByID(id int) (*models.Worker, error)
 	GetByName(name string) (*models.Worker, error)
-	GetByUsername(username string) (*models.Worker, error) // <-- 新增此行
+	GetByUsername(username string) (*models.Worker, error) // 新增的方法
 	GetAll() ([]*models.Worker, error)
 	Create(worker *models.CreateWorkerRequest) (*models.Worker, error)
 	Update(id int, worker *models.UpdateWorkerRequest) (*models.Worker, error)
@@ -29,10 +29,20 @@ func NewWorkerRepository(db *sqlx.DB) WorkerRepository {
 	return &workerRepository{db: db}
 }
 
+// (修改) 定义一个包含所有字段的基础查询语句，方便复用
+const workerQueryFields = `
+	worker_id, 
+	name, 
+	username, 
+	password_hash, 
+	role, 
+	is_active, 
+	COALESCE(notes, '') as notes
+`
+
 func (r *workerRepository) GetByID(id int) (*models.Worker, error) {
 	var worker models.Worker
-	// 使用 COALESCE 转换 NULL
-	query := `SELECT worker_id, name, COALESCE(notes, '') as notes FROM Workers WHERE worker_id = $1`
+	query := fmt.Sprintf("SELECT %s FROM Workers WHERE worker_id = $1", workerQueryFields)
 
 	err := r.db.Get(&worker, query, id)
 	if err != nil {
@@ -47,23 +57,23 @@ func (r *workerRepository) GetByID(id int) (*models.Worker, error) {
 
 func (r *workerRepository) GetByName(name string) (*models.Worker, error) {
 	var worker models.Worker
-	// 使用 COALESCE 转换 NULL
-	query := `SELECT worker_id, name, COALESCE(notes, '') as notes FROM Workers WHERE name = $1`
+	query := fmt.Sprintf("SELECT %s FROM Workers WHERE name = $1", workerQueryFields)
 
 	err := r.db.Get(&worker, query, name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("worker not found")
 		}
-		return nil, fmt.Errorf("failed to get worker: %w", err)
+		return nil, fmt.Errorf("failed to get worker by name: %w", err)
 	}
 
 	return &worker, nil
 }
 
+// (新增) 通过用户名获取员工
 func (r *workerRepository) GetByUsername(username string) (*models.Worker, error) {
 	var worker models.Worker
-	query := `SELECT worker_id, name, username, password_hash, role, is_active, COALESCE(notes, '') as notes FROM Workers WHERE username = $1`
+	query := fmt.Sprintf("SELECT %s FROM Workers WHERE username = $1", workerQueryFields)
 	err := r.db.Get(&worker, query, username)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -76,8 +86,7 @@ func (r *workerRepository) GetByUsername(username string) (*models.Worker, error
 
 func (r *workerRepository) GetAll() ([]*models.Worker, error) {
 	var workers []*models.Worker
-	// 使用 COALESCE 转换 NULL
-	query := `SELECT worker_id, name, COALESCE(notes, '') as notes FROM Workers ORDER BY worker_id`
+	query := fmt.Sprintf("SELECT %s FROM Workers ORDER BY worker_id", workerQueryFields)
 
 	err := r.db.Select(&workers, query)
 	if err != nil {
@@ -89,7 +98,7 @@ func (r *workerRepository) GetAll() ([]*models.Worker, error) {
 
 func (r *workerRepository) Create(workerReq *models.CreateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
-	// 在 RETURNING 子句中使用 COALESCE 转换 NULL
+	// 注意: 创建时我们不设置username, password等字段，这些应通过特定流程管理
 	query := `INSERT INTO Workers (name, notes) VALUES ($1, $2) RETURNING worker_id, name, COALESCE(notes, '') as notes`
 
 	err := r.db.QueryRow(query, workerReq.Name, workerReq.Notes).Scan(&worker.WorkerID, &worker.Name, &worker.Notes)
@@ -102,7 +111,7 @@ func (r *workerRepository) Create(workerReq *models.CreateWorkerRequest) (*model
 
 func (r *workerRepository) Update(id int, workerReq *models.UpdateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
-	// 在 RETURNING 子句中使用 COALESCE 转换 NULL
+	// 更新操作同样应避免直接修改认证信息
 	query := `UPDATE Workers SET name = $1, notes = $2 WHERE worker_id = $3 RETURNING worker_id, name, COALESCE(notes, '') as notes`
 
 	err := r.db.QueryRow(query, workerReq.Name, workerReq.Notes, id).Scan(&worker.WorkerID, &worker.Name, &worker.Notes)
