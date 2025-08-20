@@ -1,4 +1,8 @@
 @echo off
+REM 强制使用 UTF-8
+chcp 65001 >nul
+
+@echo off
 REM CUTRIX Project Build Script (Windows)
 REM 使用方法:
 REM   build.bat          - 正常构建启动
