@@ -28,11 +28,11 @@ type ProductionTask struct {
 
 // FabricRoll 布匹模型
 type FabricRoll struct {
-	RollID            string    `json:"roll_id" db:"roll_id" validate:"required"`
-	StyleID           int       `json:"style_id" db:"style_id" validate:"required"`
-	Color             string    `json:"color" db:"color" validate:"required"`
-	RegistrationTime  time.Time `json:"registration_time" db:"registration_time"`
-	Status            string    `json:"status" db:"status" validate:"required,oneof=可用 使用中 已用完"`
+	RollID           string    `json:"roll_id" db:"roll_id" validate:"required"`
+	StyleID          int       `json:"style_id" db:"style_id" validate:"required"`
+	Color            string    `json:"color" db:"color" validate:"required"`
+	RegistrationTime time.Time `json:"registration_time" db:"registration_time"`
+	Status           string    `json:"status" db:"status" validate:"required,oneof=可用 使用中 已用完"`
 }
 
 // ProductionLog 生产记录模型
@@ -49,9 +49,13 @@ type ProductionLog struct {
 
 // Worker 员工模型
 type Worker struct {
-	WorkerID int    `json:"worker_id" db:"worker_id"`
-	Name     string `json:"name" db:"name" validate:"required"`
-	Notes    string `json:"notes" db:"notes"`
+	WorkerID     int    `json:"worker_id" db:"worker_id"`
+	Name         string `json:"name" db:"name" validate:"required"`
+	Notes        string `json:"notes" db:"notes"`
+	Username     string `json:"username" db:"username"`
+	PasswordHash string `json:"-" db:"password_hash"` // 密码哈希不应通过API返回
+	Role         string `json:"role" db:"role"`
+	IsActive     bool   `json:"is_active" db:"is_active"`
 }
 
 // 请求模型
@@ -97,14 +101,19 @@ type UpdateWorkerRequest struct {
 	Notes string `json:"notes"`
 }
 
+type LoginRequest struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password"` // 密码是可选的
+}
+
 // 响应模型
 type TaskProgress struct {
-	TaskID          int    `json:"task_id"`
-	StyleID         int    `json:"style_id"`
-	MarkerID        string `json:"marker_id"`
-	Color           string `json:"color"`
-	PlannedLayers   int    `json:"planned_layers"`
-	CompletedLayers int    `json:"completed_layers"`
+	TaskID          int     `json:"task_id"`
+	StyleID         int     `json:"style_id"`
+	MarkerID        string  `json:"marker_id"`
+	Color           string  `json:"color"`
+	PlannedLayers   int     `json:"planned_layers"`
+	CompletedLayers int     `json:"completed_layers"`
 	Progress        float64 `json:"progress"`
 }
 

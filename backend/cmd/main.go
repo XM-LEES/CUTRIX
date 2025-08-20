@@ -56,6 +56,7 @@ func main() {
 	workerRepo := repositories.NewWorkerRepository(db)
 
 	// ======== 统一初始化所有服务 (Services) ========
+	authService := services.NewAuthService(workerRepo) // 新增认证服务
 	styleService := services.NewStyleService(styleRepo)
 	orderService := services.NewOrderService(orderRepo, styleRepo)
 	taskService := services.NewTaskService(taskRepo, styleRepo)
@@ -65,6 +66,7 @@ func main() {
 	workerManagementService := services.NewWorkerManagementService(workerRepo)
 
 	// ======== 统一初始化所有处理器 (Handlers) ========
+	authHandler := handlers.NewAuthHandler(authService) // 新增认证处理器
 	styleHandler := handlers.NewStyleHandler(styleService)
 	orderHandler := handlers.NewOrderHandler(orderService)
 	taskHandler := handlers.NewTaskHandler(taskService)
@@ -75,16 +77,32 @@ func main() {
 	// API路由组
 	api := r.Group("/api")
 	{
-		// 款号管理
+		// 新增 Auth 路由组 (公开访问)
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", authHandler.Login)
+		}
+
+		// 创建受保护的路由组
+		// 当准备好强制执行登录时，取消下面这行的注释
+		// authorized := api.Group("/")
+		// authorized.Use(middleware.AuthRequired())
+
+		// 为简化开发，暂时将所有路由放在 /api 下，不强制认证
+		// 当启用认证后，应将下面的路由组移至 authorized 路由组下
+
+		// 款号管理 (应为管理员权限)
 		styles := api.Group("/styles")
+		// styles.Use(middleware.AdminRequired()) // 启用管理员权限检查
 		{
 			styles.POST("", styleHandler.CreateStyle)
 			styles.GET("", styleHandler.GetStyles)
 			styles.GET("/:id", styleHandler.GetStyle)
 		}
 
-		// 订单管理
+		// 订单管理 (应为管理员权限)
 		orders := api.Group("/orders")
+		// orders.Use(middleware.AdminRequired())
 		{
 			orders.POST("", orderHandler.CreateOrder)
 			orders.GET("", orderHandler.GetOrders)
@@ -94,6 +112,7 @@ func main() {
 		// 生产任务管理
 		tasks := api.Group("/tasks")
 		{
+			// 创建任务应为管理员权限
 			tasks.POST("", taskHandler.CreateTask)
 			tasks.GET("", taskHandler.GetTasks)
 			tasks.GET("/:id", taskHandler.GetTask)
@@ -103,6 +122,7 @@ func main() {
 		// 布匹管理
 		fabric := api.Group("/fabric-rolls")
 		{
+			// 员工和管理员都可以创建
 			fabric.POST("", fabricHandler.CreateFabricRoll)
 			fabric.GET("", fabricHandler.GetFabricRolls)
 			fabric.GET("/:id", fabricHandler.GetFabricRoll)
@@ -111,18 +131,21 @@ func main() {
 		// 生产记录
 		logs := api.Group("/production-logs")
 		{
+			// 员工和管理员都可以创建
 			logs.POST("", logHandler.CreateProductionLog)
 			logs.GET("", logHandler.GetProductionLogs)
 		}
 
-		// 员工管理
+		// 员工管理 (应为管理员权限)
 		workers := api.Group("/workers")
+		// workers.Use(middleware.AdminRequired())
 		{
 			workers.GET("", workerHandler.GetWorkers)
 			workers.POST("", workerHandler.CreateWorker)
 			workers.GET("/:id", workerHandler.GetWorker)
 			workers.PUT("/:id", workerHandler.UpdateWorker)
 			workers.DELETE("/:id", workerHandler.DeleteWorker)
+			// 此路由应允许员工访问自己的任务
 			workers.GET("/:id/tasks", workerHandler.GetWorkerTasks)
 		}
 	}
@@ -142,7 +165,6 @@ func main() {
 			c.JSON(http.StatusNotFound, gin.H{"error": "API not found"})
 			return
 		}
-		// 尝试提供静态文件，如果不存在则返回 index.html
 		c.File("./web/dist/index.html")
 	})
 
