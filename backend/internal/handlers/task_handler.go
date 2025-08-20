@@ -5,23 +5,18 @@ import (
 	"strconv"
 
 	"cutrix-backend/internal/models"
-	"cutrix-backend/internal/repositories"
 	"cutrix-backend/internal/services"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 type TaskHandler struct {
 	taskService *services.TaskService
 }
 
-func NewTaskHandler(db *sqlx.DB) *TaskHandler {
+func NewTaskHandler(taskService *services.TaskService) *TaskHandler {
 	return &TaskHandler{
-		taskService: services.NewTaskService(
-			repositories.NewTaskRepository(db),
-			repositories.NewStyleRepository(db),
-		),
+		taskService: taskService,
 	}
 }
 

@@ -5,23 +5,18 @@ import (
 	"strconv"
 
 	"cutrix-backend/internal/models"
-	"cutrix-backend/internal/repositories"
 	"cutrix-backend/internal/services"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 type OrderHandler struct {
 	orderService *services.OrderService
 }
 
-func NewOrderHandler(db *sqlx.DB) *OrderHandler {
+func NewOrderHandler(orderService *services.OrderService) *OrderHandler {
 	return &OrderHandler{
-		orderService: services.NewOrderService(
-			repositories.NewOrderRepository(db),
-			repositories.NewStyleRepository(db),
-		),
+		orderService: orderService,
 	}
 }
 

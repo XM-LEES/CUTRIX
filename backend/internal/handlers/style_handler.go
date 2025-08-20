@@ -5,20 +5,18 @@ import (
 	"strconv"
 
 	"cutrix-backend/internal/models"
-	"cutrix-backend/internal/repositories"
 	"cutrix-backend/internal/services"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 type StyleHandler struct {
 	styleService *services.StyleService
 }
 
-func NewStyleHandler(db *sqlx.DB) *StyleHandler {
+func NewStyleHandler(styleService *services.StyleService) *StyleHandler {
 	return &StyleHandler{
-		styleService: services.NewStyleService(repositories.NewStyleRepository(db)),
+		styleService: styleService,
 	}
 }
 

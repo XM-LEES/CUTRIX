@@ -47,19 +47,29 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(middleware.Recovery())
 
-	// 初始化仓库
+	// ======== 统一初始化所有仓库 (Repositories) ========
+	styleRepo := repositories.NewStyleRepository(db)
+	orderRepo := repositories.NewOrderRepository(db)
+	taskRepo := repositories.NewTaskRepository(db)
+	fabricRepo := repositories.NewFabricRepository(db)
+	logRepo := repositories.NewLogRepository(db)
 	workerRepo := repositories.NewWorkerRepository(db)
-	
-	// 初始化服务
+
+	// ======== 统一初始化所有服务 (Services) ========
+	styleService := services.NewStyleService(styleRepo)
+	orderService := services.NewOrderService(orderRepo, styleRepo)
+	taskService := services.NewTaskService(taskRepo, styleRepo)
+	fabricService := services.NewFabricService(fabricRepo, styleRepo)
+	logService := services.NewLogService(logRepo)
 	workerQueryService := services.NewWorkerQueryService(workerRepo)
 	workerManagementService := services.NewWorkerManagementService(workerRepo)
-	
-	// 初始化处理器
-	taskHandler := handlers.NewTaskHandler(db)
-	orderHandler := handlers.NewOrderHandler(db)
-	styleHandler := handlers.NewStyleHandler(db)
-	fabricHandler := handlers.NewFabricHandler(db)
-	logHandler := handlers.NewLogHandler(db)
+
+	// ======== 统一初始化所有处理器 (Handlers) ========
+	styleHandler := handlers.NewStyleHandler(styleService)
+	orderHandler := handlers.NewOrderHandler(orderService)
+	taskHandler := handlers.NewTaskHandler(taskService)
+	fabricHandler := handlers.NewFabricHandler(fabricService)
+	logHandler := handlers.NewLogHandler(logService)
 	workerHandler := handlers.NewWorkerHandler(workerQueryService, workerManagementService)
 
 	// API路由组
@@ -120,12 +130,12 @@ func main() {
 	// 静态文件服务
 	r.Static("/assets", "./web/dist/assets")
 	r.StaticFile("/favicon.ico", "./web/dist/favicon.ico")
-	
+
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
-	
+
 	// SPA 路由处理 - 所有非 API 路径都返回 index.html
 	r.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api") {

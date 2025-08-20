@@ -4,23 +4,18 @@ import (
 	"net/http"
 
 	"cutrix-backend/internal/models"
-	"cutrix-backend/internal/repositories"
 	"cutrix-backend/internal/services"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jmoiron/sqlx"
 )
 
 type FabricHandler struct {
 	fabricService *services.FabricService
 }
 
-func NewFabricHandler(db *sqlx.DB) *FabricHandler {
+func NewFabricHandler(fabricService *services.FabricService) *FabricHandler {
 	return &FabricHandler{
-		fabricService: services.NewFabricService(
-			repositories.NewFabricRepository(db),
-			repositories.NewStyleRepository(db),
-		),
+		fabricService: fabricService,
 	}
 }
 
@@ -93,9 +88,9 @@ type LogHandler struct {
 	logService *services.LogService
 }
 
-func NewLogHandler(db *sqlx.DB) *LogHandler {
+func NewLogHandler(logService *services.LogService) *LogHandler {
 	return &LogHandler{
-		logService: services.NewLogService(repositories.NewLogRepository(db)),
+		logService: logService,
 	}
 }
 
@@ -144,4 +139,3 @@ func (h *LogHandler) GetProductionLogs(c *gin.Context) {
 		Data:    logs,
 	})
 }
-

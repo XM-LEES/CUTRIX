@@ -65,6 +65,7 @@ func (s *FabricService) GetFabricRolls() ([]*models.FabricRoll, error) {
 	return s.fabricRepo.GetAll()
 }
 
+// LogService 保持不变
 type LogService struct {
 	logRepo   repositories.LogRepository
 	validator *validator.Validate
@@ -101,26 +102,4 @@ func (s *LogService) CreateProductionLog(req *models.CreateProductionLogRequest)
 
 func (s *LogService) GetProductionLogs() ([]*models.ProductionLog, error) {
 	return s.logRepo.GetAll()
-}
-
-type WorkerService struct {
-	workerRepo repositories.WorkerRepository
-}
-
-func NewWorkerService(workerRepo repositories.WorkerRepository) *WorkerService {
-	return &WorkerService{
-		workerRepo: workerRepo,
-	}
-}
-
-func (s *WorkerService) GetWorkers() ([]*models.Worker, error) {
-	return s.workerRepo.GetAll()
-}
-
-func (s *WorkerService) GetWorkerTasks(workerID int) ([]*models.ProductionTask, error) {
-	return s.workerRepo.GetWorkerTasks(workerID)
-}
-
-func (s *WorkerService) GetWorkerLogs(workerID int) ([]*models.ProductionLog, error) {
-	return s.workerRepo.GetWorkerLogs(workerID)
 }
