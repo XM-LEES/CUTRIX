@@ -162,13 +162,12 @@ export interface ApiConfig {
 export interface User {
   worker_id: number;
   name: string;
-  username: string;
   role: 'admin' | 'worker';
   notes: string;
 }
 
 export interface LoginRequest {
-  username: string;
+  name: string;
   password?: string; // 密码可选
 }
 

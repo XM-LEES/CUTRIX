@@ -9,7 +9,6 @@ CREATE TABLE Workers (
     worker_id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     notes VARCHAR(150),
-    username VARCHAR(50) UNIQUE,
     password_hash VARCHAR(255),
     role VARCHAR(20) NOT NULL DEFAULT 'worker',
     is_active BOOLEAN NOT NULL DEFAULT true
@@ -87,19 +86,16 @@ CREATE INDEX idx_production_logs_process_name ON Production_Logs(process_name);
 CREATE INDEX idx_production_logs_parent_log_id ON Production_Logs(parent_log_id);
 CREATE INDEX idx_production_logs_log_time ON Production_Logs(log_time);
 CREATE INDEX idx_order_details_style_id ON Order_Details(style_id);
--- 为 name 和 username 列创建索引以提高查询性能
+-- 为 name 列创建索引以提高查询性能
 CREATE UNIQUE INDEX idx_workers_name ON Workers(name);
-CREATE UNIQUE INDEX idx_workers_username ON Workers(username);
 
 -- 插入示例数据
 -- 管理员账号: admin / admin
 -- 普通员工账号: zhangsan (无密码)
-INSERT INTO Workers (name, username, password_hash, role) VALUES
-('系统管理员', 'admin', '$2a$10$t.hV.K/yB3Y2v2C/j6g7e.eA/ZgqLw7i8a.pZGLv1/zE.iY/jG/9i', 'admin'), -- 密码是 'admin'
-('张三', 'zhangsan', '', 'worker'),
-('李四', 'lisi', '', 'worker'),
-('王五', 'wangwu', '', 'worker')
-ON CONFLICT (username) DO NOTHING;
+INSERT INTO Workers (name, password_hash, role) VALUES
+('系统管理员', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'admin'), 
+('王五', '', 'worker')
+ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO Styles (style_number) VALUES 
 ('BEE3TS111'), ('BEE3TS112'), ('BEE3TS113');

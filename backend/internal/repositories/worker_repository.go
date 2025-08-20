@@ -12,7 +12,6 @@ import (
 type WorkerRepository interface {
 	GetByID(id int) (*models.Worker, error)
 	GetByName(name string) (*models.Worker, error)
-	GetByUsername(username string) (*models.Worker, error) // 新增的方法
 	GetAll() ([]*models.Worker, error)
 	Create(worker *models.CreateWorkerRequest) (*models.Worker, error)
 	Update(id int, worker *models.UpdateWorkerRequest) (*models.Worker, error)
@@ -33,7 +32,6 @@ func NewWorkerRepository(db *sqlx.DB) WorkerRepository {
 const workerQueryFields = `
 	worker_id, 
 	name, 
-	username, 
 	password_hash, 
 	role, 
 	is_active, 
@@ -70,20 +68,6 @@ func (r *workerRepository) GetByName(name string) (*models.Worker, error) {
 	return &worker, nil
 }
 
-// (新增) 通过用户名获取员工
-func (r *workerRepository) GetByUsername(username string) (*models.Worker, error) {
-	var worker models.Worker
-	query := fmt.Sprintf("SELECT %s FROM Workers WHERE username = $1", workerQueryFields)
-	err := r.db.Get(&worker, query, username)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("worker not found")
-		}
-		return nil, fmt.Errorf("failed to get worker by username: %w", err)
-	}
-	return &worker, nil
-}
-
 func (r *workerRepository) GetAll() ([]*models.Worker, error) {
 	var workers []*models.Worker
 	query := fmt.Sprintf("SELECT %s FROM Workers ORDER BY worker_id", workerQueryFields)
@@ -98,7 +82,7 @@ func (r *workerRepository) GetAll() ([]*models.Worker, error) {
 
 func (r *workerRepository) Create(workerReq *models.CreateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
-	// 注意: 创建时我们不设置username, password等字段，这些应通过特定流程管理
+	// 注意: 创建时我们不设置password等字段，这些应通过特定流程管理
 	query := `INSERT INTO Workers (name, notes) VALUES ($1, $2) RETURNING worker_id, name, COALESCE(notes, '') as notes`
 
 	err := r.db.QueryRow(query, workerReq.Name, workerReq.Notes).Scan(&worker.WorkerID, &worker.Name, &worker.Notes)

@@ -52,7 +52,6 @@ type Worker struct {
 	WorkerID     int    `json:"worker_id" db:"worker_id"`
 	Name         string `json:"name" db:"name" validate:"required"`
 	Notes        string `json:"notes" db:"notes"`
-	Username     string `json:"username" db:"username"`
 	PasswordHash string `json:"-" db:"password_hash"` // 密码哈希不应通过API返回
 	Role         string `json:"role" db:"role"`
 	IsActive     bool   `json:"is_active" db:"is_active"`
@@ -102,7 +101,7 @@ type UpdateWorkerRequest struct {
 }
 
 type LoginRequest struct {
-	Username string `json:"username" validate:"required"`
+	Name     string `json:"name" validate:"required"`
 	Password string `json:"password"` // 密码是可选的
 }
 

@@ -31,10 +31,10 @@ const LoginPage: React.FC = () => {
           onFinish={onFinish}
         >
           <Form.Item
-            name="username"
-            rules={[{ required: true, message: '请输入用户名!' }]}
+            name="name"
+            rules={[{ required: true, message: '请输入姓名!' }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="用户名" />
+            <Input prefix={<UserOutlined />} placeholder="姓名" />
           </Form.Item>
           <Form.Item
             name="password"

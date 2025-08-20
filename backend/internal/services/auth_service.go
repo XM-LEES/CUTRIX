@@ -25,7 +25,7 @@ func NewAuthService(workerRepo repositories.WorkerRepository) AuthService {
 // Login 处理用户登录请求
 func (s *authService) Login(req *models.LoginRequest) (*models.Worker, error) {
 	// 1. 根据用户名查找用户
-	worker, err := s.workerRepo.GetByUsername(req.Username)
+	worker, err := s.workerRepo.GetByName(req.Name)
 	if err != nil {
 		return nil, fmt.Errorf("无效的用户名或密码")
 	}
