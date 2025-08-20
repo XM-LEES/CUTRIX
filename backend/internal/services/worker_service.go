@@ -34,7 +34,7 @@ func (s *workerManagementService) Create(workerReq *models.CreateWorkerRequest) 
 	if err == nil && existingWorker != nil {
 		return nil, &ValidationError{Message: "员工姓名已存在"}
 	}
-	
+
 	return s.workerRepo.Create(workerReq)
 }
 
@@ -44,7 +44,12 @@ func (s *workerManagementService) Update(id int, workerReq *models.UpdateWorkerR
 	if err == nil && existingWorker != nil && existingWorker.WorkerID != id {
 		return nil, &ValidationError{Message: "员工姓名已存在"}
 	}
-	
+
+	// 验证角色值
+	if workerReq.Role != "admin" && workerReq.Role != "worker" {
+		return nil, &ValidationError{Message: "无效的角色"}
+	}
+
 	return s.workerRepo.Update(id, workerReq)
 }
 
@@ -54,6 +59,6 @@ func (s *workerManagementService) Delete(id int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return s.workerRepo.Delete(id)
 }

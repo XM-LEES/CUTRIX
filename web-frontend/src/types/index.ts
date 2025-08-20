@@ -97,6 +97,8 @@ export interface Worker {
   worker_id: number;
   name: string;
   notes: string;
+  role: 'admin' | 'worker';
+  is_active: boolean;
 }
 
 export interface CreateWorkerRequest {
@@ -107,8 +109,9 @@ export interface CreateWorkerRequest {
 export interface UpdateWorkerRequest {
   name: string;
   notes: string;
+  role: 'admin' | 'worker';
+  is_active: boolean;
 }
-
 // 表单相关类型
 export interface FormErrors {
   [key: string]: string;

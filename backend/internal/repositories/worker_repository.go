@@ -95,10 +95,13 @@ func (r *workerRepository) Create(workerReq *models.CreateWorkerRequest) (*model
 
 func (r *workerRepository) Update(id int, workerReq *models.UpdateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
-	// 更新操作同样应避免直接修改认证信息
-	query := `UPDATE Workers SET name = $1, notes = $2 WHERE worker_id = $3 RETURNING worker_id, name, COALESCE(notes, '') as notes`
+	query := `
+		UPDATE Workers 
+		SET name = $1, notes = $2, role = $3, is_active = $4 
+		WHERE worker_id = $5 
+		RETURNING ` + workerQueryFields
 
-	err := r.db.QueryRow(query, workerReq.Name, workerReq.Notes, id).Scan(&worker.WorkerID, &worker.Name, &worker.Notes)
+	err := r.db.Get(&worker, query, workerReq.Name, workerReq.Notes, workerReq.Role, workerReq.IsActive, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("worker not found")

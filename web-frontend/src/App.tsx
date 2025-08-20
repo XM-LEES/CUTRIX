@@ -1,6 +1,6 @@
 import { FC, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Layout } from 'antd';
+import { Layout, Button, Typography } from 'antd';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Styles from './pages/Styles';
@@ -10,6 +10,8 @@ import ProductionLogs from './pages/ProductionLogs';
 import Workers from './pages/Workers';
 import LoginPage from './pages/Login';
 import { useAuthStore } from './store/authStore';
+import { LogoutOutlined } from '@ant-design/icons';
+const { Title } = Typography;
 
 const { Content } = Layout;
 
@@ -34,11 +36,18 @@ const AdminLayout: FC = () => (
 
 // 员工视图 (占位符)
 const WorkerLayout: FC = () => (
-    <div>
-        <h1>员工操作界面</h1>
-        <p>这里将是员工的工作台。</p>
-        <button onClick={() => useAuthStore.getState().logout()}>退出登录</button>
-    </div>
+  <div style={{ padding: 40 }}>
+      <Title level={2}>员工操作界面</Title>
+      <p>这里将是员工的工作台。</p>
+      <Button 
+        type="primary" 
+        danger 
+        icon={<LogoutOutlined />}
+        onClick={() => useAuthStore.getState().logout()}
+      >
+        退出登录
+      </Button>
+  </div>
 );
 
 

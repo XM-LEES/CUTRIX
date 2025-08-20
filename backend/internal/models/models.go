@@ -96,8 +96,10 @@ type CreateWorkerRequest struct {
 }
 
 type UpdateWorkerRequest struct {
-	Name  string `json:"name" validate:"required"`
-	Notes string `json:"notes"`
+	Name     string `json:"name" validate:"required"`
+	Notes    string `json:"notes"`
+	Role     string `json:"role" validate:"oneof=admin worker"`
+	IsActive bool   `json:"is_active"`
 }
 
 type LoginRequest struct {

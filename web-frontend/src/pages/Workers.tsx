@@ -11,7 +11,10 @@ import {
   Space,
   Card,
   Row,
-  Col
+  Col,
+  Tag,
+  Select,
+  Switch
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useWorkerStore } from '../store';
@@ -82,7 +85,9 @@ const Workers: React.FC = () => {
     setEditingWorker(worker);
     form.setFieldsValue({
       name: worker.name,
-      notes: worker.notes
+      notes: worker.notes,
+      role: worker.role,
+      is_active: worker.is_active,
     });
     setIsModalOpen(true);
   };
@@ -104,6 +109,7 @@ const Workers: React.FC = () => {
       handleCreate(values);
     }
   };
+  const { Option } = Select; // 在 columns 定义前加上这句
 
   const columns = [
     {
@@ -121,6 +127,22 @@ const Workers: React.FC = () => {
       dataIndex: 'notes',
       key: 'notes',
       render: (notes: string) => notes || '-',
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      key: 'role',
+      render: (role: string) => role === 'admin' ? '管理员' : '员工',
+    },
+    {
+      title: '状态',
+      dataIndex: 'is_active',
+      key: 'is_active',
+      render: (isActive: boolean) => (
+        <Tag color={isActive ? 'green' : 'red'}>
+          {isActive ? '在职' : '离职'}
+        </Tag>
+      ),
     },
     {
       title: '操作',
@@ -198,7 +220,7 @@ const Workers: React.FC = () => {
           form={form} 
           onFinish={onFinish} 
           layout="vertical"
-          initialValues={{ notes: '' }}
+          initialValues={{ notes: '', role: 'worker', is_active: true }}
         >
           <Form.Item
             name="name"
@@ -220,6 +242,23 @@ const Workers: React.FC = () => {
               showCount
             />
           </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="role" label="角色" rules={[{ required: true, message: '请选择角色' }]}>
+                <Select>
+                  <Option value="worker">员工</Option>
+                  <Option value="admin">管理员</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="is_active" label="状态" valuePropName="checked">
+                <Switch checkedChildren="在职" unCheckedChildren="离职" />
+              </Form.Item>
+            </Col>
+          </Row>
+
         </Form>
       </Modal>
     </div>

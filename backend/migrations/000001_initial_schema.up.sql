@@ -7,7 +7,7 @@ CREATE TABLE Styles (
 -- 创建员工表
 CREATE TABLE Workers (
     worker_id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(50) NOT NULL UNIQUE,
     notes VARCHAR(150),
     password_hash VARCHAR(255),
     role VARCHAR(20) NOT NULL DEFAULT 'worker',
@@ -93,7 +93,9 @@ CREATE UNIQUE INDEX idx_workers_name ON Workers(name);
 -- 管理员账号: admin / admin
 -- 普通员工账号: zhangsan (无密码)
 INSERT INTO Workers (name, password_hash, role) VALUES
-('系统管理员', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'admin'), 
+('admin', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'admin'), 
+('张三', '', 'worker'),
+('李四', '', 'worker'),
 ('王五', '', 'worker')
 ON CONFLICT (name) DO NOTHING;
 
