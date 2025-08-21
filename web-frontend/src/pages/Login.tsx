@@ -38,10 +38,9 @@ const LoginPage: React.FC = () => {
           </Form.Item>
           <Form.Item
             name="password"
-            // 密码非必填，以支持无密码登录
-            // rules={[{ required: true, message: '请输入密码!' }]}
+            rules={[{ required: true, message: '请输入密码!' }]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="密码（部分员工无需密码）" />
+            <Input.Password prefix={<LockOutlined />} placeholder="密码" />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>

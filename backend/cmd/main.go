@@ -20,28 +20,23 @@ import (
 )
 
 func main() {
-	// 加载配置
+	// ... (加载配置和初始化数据库部分不变)
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 初始化数据库连接
 	db, err := database.Initialize(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
 
-	// 设置Gin模式
+	// ... (设置 Gin 模式和中间件部分不变)
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-
-	// 创建Gin引擎
 	r := gin.Default()
-
-	// 添加中间件
 	r.Use(middleware.CORS())
 	r.Use(middleware.Logger())
 	r.Use(middleware.Recovery())
@@ -52,8 +47,8 @@ func main() {
 	fabricRepo := repositories.NewFabricRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 	workerRepo := repositories.NewWorkerRepository(db)
-	orderRepo := repositories.NewProductionOrderRepository(db) // 新
-	planRepo := repositories.NewProductionPlanRepository(db)   // 新
+	orderRepo := repositories.NewProductionOrderRepository(db)
+	planRepo := repositories.NewProductionPlanRepository(db)
 
 	// ======== 统一初始化所有服务 (Services) ========
 	authService := services.NewAuthService(workerRepo)
@@ -61,10 +56,11 @@ func main() {
 	taskService := services.NewTaskService(taskRepo, styleRepo)
 	fabricService := services.NewFabricService(fabricRepo, styleRepo)
 	logService := services.NewLogService(logRepo)
-	workerQueryService := services.NewWorkerQueryService(workerRepo)
-	workerManagementService := services.NewWorkerManagementService(workerRepo)
-	orderService := services.NewProductionOrderService(db, orderRepo) // 新
-	planService := services.NewProductionPlanService(db, planRepo)    // 新
+	orderService := services.NewProductionOrderService(db, orderRepo)
+	planService := services.NewProductionPlanService(db, planRepo)
+
+	// 修改：只初始化一个统一的 workerService
+	workerService := services.NewWorkerService(workerRepo)
 
 	// ======== 统一初始化所有处理器 (Handlers) ========
 	authHandler := handlers.NewAuthHandler(authService)
@@ -72,11 +68,13 @@ func main() {
 	taskHandler := handlers.NewTaskHandler(taskService)
 	fabricHandler := handlers.NewFabricHandler(fabricService)
 	logHandler := handlers.NewLogHandler(logService)
-	workerHandler := handlers.NewWorkerHandler(workerQueryService, workerManagementService)
-	orderHandler := handlers.NewProductionOrderHandler(orderService) // 新
-	planHandler := handlers.NewProductionPlanHandler(planService)    // 新
+	orderHandler := handlers.NewProductionOrderHandler(orderService)
+	planHandler := handlers.NewProductionPlanHandler(planService)
 
-	// API路由组
+	// 修改：将统一的 workerService 传入 workerHandler
+	workerHandler := handlers.NewWorkerHandler(workerService)
+
+	// ... (API 路由组部分不变)
 	api := r.Group("/api")
 	{
 		// 认证
@@ -109,7 +107,7 @@ func main() {
 			plans.GET("/:id", planHandler.GetPlan)
 		}
 
-		// 生产任务管理 (保持不变，但现在由生产计划创建)
+		// 生产任务管理
 		tasks := api.Group("/tasks")
 		{
 			tasks.GET("", taskHandler.GetTasks)
@@ -141,10 +139,11 @@ func main() {
 			workers.PUT("/:id", workerHandler.UpdateWorker)
 			workers.DELETE("/:id", workerHandler.DeleteWorker)
 			workers.GET("/:id/tasks", workerHandler.GetWorkerTasks)
+			workers.PUT("/:id/password", workerHandler.UpdateWorkerPassword)
 		}
 	}
 
-	// 静态文件服务和健康检查 (保持不变)
+	// ... (静态文件服务和服务器启动部分不变)
 	r.Static("/assets", "./web/dist/assets")
 	r.StaticFile("/favicon.ico", "./web/dist/favicon.ico")
 	r.GET("/health", func(c *gin.Context) {
@@ -158,7 +157,6 @@ func main() {
 		c.File("./web/dist/index.html")
 	})
 
-	// 启动服务器和优雅关闭 (保持不变)
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,

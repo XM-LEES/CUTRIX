@@ -197,3 +197,7 @@ type TaskProgress struct {
 	CompletedLayers int     `json:"completed_layers"`
 	Progress        float64 `json:"progress"`
 }
+
+type UpdateWorkerPasswordRequest struct {
+	Password string `json:"password" validate:"required,min=6"`
+}

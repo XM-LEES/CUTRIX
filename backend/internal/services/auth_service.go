@@ -35,15 +35,13 @@ func (s *authService) Login(req *models.LoginRequest) (*models.Worker, error) {
 		return nil, fmt.Errorf("用户已被禁用")
 	}
 
-	// 3. 验证密码 (如果提供了密码)
-	if req.Password != "" {
-		err = bcrypt.CompareHashAndPassword([]byte(worker.PasswordHash), []byte(req.Password))
-		if err != nil {
-			return nil, fmt.Errorf("无效的用户名或密码")
-		}
-	} else if worker.PasswordHash != "" {
-		// 如果需要密码但未提供
+	// 3. 强制验证密码
+	if req.Password == "" {
 		return nil, fmt.Errorf("请输入密码")
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(worker.PasswordHash), []byte(req.Password))
+	if err != nil {
+		return nil, fmt.Errorf("无效的用户名或密码")
 	}
 
 	// 4. 登录成功，返回用户信息（确保清空密码哈希）

@@ -18,6 +18,7 @@ type WorkerRepository interface {
 	Delete(id int) error
 	GetWorkerTasks(workerID int) ([]*models.ProductionTask, error)
 	GetWorkerLogs(workerID int) ([]*models.ProductionLog, error)
+	UpdatePassword(id int, passwordHash string) error
 }
 
 type workerRepository struct {
@@ -161,4 +162,20 @@ func (r *workerRepository) GetWorkerLogs(workerID int) ([]*models.ProductionLog,
 	}
 
 	return logs, nil
+}
+
+func (r *workerRepository) UpdatePassword(id int, passwordHash string) error {
+	query := `UPDATE Workers SET password_hash = $1 WHERE worker_id = $2`
+	result, err := r.db.Exec(query, passwordHash, id)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("worker not found")
+	}
+	return nil
 }

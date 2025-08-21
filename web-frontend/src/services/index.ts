@@ -36,6 +36,7 @@ export const workerService = {
   updateWorker: (id: number, data: UpdateWorkerRequest) => apiService.put<Worker>(`/workers/${id}`, data),
   deleteWorker: (id: number) => apiService.delete(`/workers/${id}`),
   getWorkerTasks: (workerId: number) => apiService.get<ProductionTask[]>(`/workers/${workerId}/tasks`),
+  updateWorkerPassword: (id: number, data: { password: string }) => apiService.put(`/workers/${id}/password`, data),
 };
 
 // 登录服务

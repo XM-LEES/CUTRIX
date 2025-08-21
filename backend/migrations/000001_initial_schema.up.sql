@@ -125,7 +125,7 @@ CREATE UNIQUE INDEX idx_workers_name ON Workers(name);
 -- 插入示例数据
 INSERT INTO Workers (name, password_hash, role) VALUES
 ('admin', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'admin'),
-('manager', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'manager'),
+('manager', '$2a$12$kFFQ9IF1WV3Ky4VefgLFfOJl.bD1Ef/9bQC/7Ghc.IlFRRCjosya2', 'manager'),
 ('张三', '', 'worker'),
 ('李四', '', 'worker'),
 ('王五', '', 'pattern_maker')

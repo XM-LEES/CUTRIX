@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -56,13 +57,17 @@ func Recovery() gin.HandlerFunc {
 // -- 新增 AuthRequired 中间件 --
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 这里我们暂时简化，实际项目中应使用 JWT
-		// 假设 worker_id 从 header 传入
-		workerID := c.GetHeader("X-Worker-ID")
+		workerIDStr := c.GetHeader("X-Worker-ID")
 		role := c.GetHeader("X-Role")
 
-		if workerID == "" || role == "" {
+		if workerIDStr == "" || role == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization required"})
+			return
+		}
+
+		workerID, err := strconv.Atoi(workerIDStr)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Worker ID"})
 			return
 		}
 

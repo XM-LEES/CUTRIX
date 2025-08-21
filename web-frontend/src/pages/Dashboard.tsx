@@ -7,34 +7,33 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { useStyleStore } from '../store/styleStore';
-import { usePlanStore } from '../store/planStore'; // 替换：使用 planStore
+import { usePlanStore } from '../store/planStore';
 import { useWorkerStore } from '../store/workerStore';
-import type { ProductionTask } from '../types'; // 新增：为 task 参数提供类型
+import type { ProductionTask } from '../types';
 
 const { Title } = Typography;
 
 const Dashboard: React.FC = () => {
-  // 从各自的 store 中获取数据和加载状态
   const { styles, fetchStyles, loading: stylesLoading } = useStyleStore();
-  const { plans, fetchPlans, loading: plansLoading } = usePlanStore(); // 替换：使用 planStore
+  const { plans, fetchPlans, loading: plansLoading } = usePlanStore();
   const { workers, fetchWorkers, loading: workersLoading } = useWorkerStore();
 
-  // 组件加载时，触发所有数据获取函数
   useEffect(() => {
     fetchStyles();
-    fetchPlans(); // 替换：获取 plans
+    fetchPlans();
     fetchWorkers();
   }, [fetchStyles, fetchPlans, fetchWorkers]);
 
-  // 修改：从所有计划的所有任务中计算待完成任务数
-  const pendingTasks = plans
-    .flatMap(plan => plan.layouts ?? [])
-    .flatMap(layout => layout.tasks ?? [])
-    .filter((task: ProductionTask) => task.planned_layers > task.completed_layers)
-    .length;
+  // 关键修改：在处理 plans 数组前，先判断它是否为数组
+  const pendingTasks = Array.isArray(plans)
+    ? plans
+        .flatMap(plan => plan.layouts ?? [])
+        .flatMap(layout => layout.tasks ?? [])
+        .filter((task: ProductionTask) => task.planned_layers > task.completed_layers)
+        .length
+    : 0; // 如果 plans 不是数组，则默认为 0
 
-  // 统一的加载状态
-  const isLoading = stylesLoading || plansLoading || workersLoading; // 替换：使用 plansLoading
+  const isLoading = stylesLoading || plansLoading || workersLoading;
 
   if (isLoading) {
     return (
