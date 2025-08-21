@@ -130,6 +130,8 @@ const Workers: React.FC = () => {
     const isRoleSelectDisabled = isEditingSelf && currentUser?.role === 'admin';
     // 在职状态开关禁用条件：管理员或主任在编辑自己时
     const isStatusSwitchDisabled = isEditingSelf && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
+    // 姓名输入框禁用条件
+    const isNameInputDisabled = isEditingSelf && currentUser?.role === 'admin';
 
 
     return (
@@ -143,7 +145,10 @@ const Workers: React.FC = () => {
             </Card>
             <Modal title={editingWorker ? "编辑员工" : "添加员工"} open={isModalOpen} onOk={form.submit} onCancel={handleModalCancel} confirmLoading={loading} width={600} destroyOnClose>
                 <Form form={form} onFinish={onFinish} layout="vertical" initialValues={{ role: 'worker', is_active: true, notes: '', worker_group: '' }}>
-                    <Form.Item name="name" label="姓名" rules={[{ required: true }]}><Input /></Form.Item>
+                    {/* 管理员不能修改自己的名字 */}
+                    <Form.Item name="name" label="姓名" rules={[{ required: true }]}>
+                        <Input disabled={isNameInputDisabled} />
+                    </Form.Item>
                     {!editingWorker && (
                          <Form.Item name="password" label="初始密码" rules={[{ required: true, message: '创建新员工时必须设置初始密码', min: 6 }]}>
                             <Input.Password placeholder="请输入至少6位初始密码" />
@@ -152,16 +157,23 @@ const Workers: React.FC = () => {
                     <Form.Item name="notes" label="备注"><Input.TextArea rows={2} /></Form.Item>
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="role" label="角色" rules={[{ required: true }]}>
-                                <Select disabled={isRoleSelectDisabled}>
-                                    {/* 关键修改：仅当管理员编辑自己时，才渲染“管理员”选项 */}
-                                    {currentUser?.role === 'admin' && isEditingSelf && <Option value="admin">管理员</Option>}
-                                    {/* 管理员可以设置车间主任 */}
-                                    {currentUser?.role === 'admin' && <Option value="manager">车间主任</Option>}
-                                    <Option value="worker">员工</Option>
-                                    <Option value="pattern_maker">打版员</Option>
-                                </Select>
-                            </Form.Item>
+                           {/* 当管理员编辑自己时，显示禁用的、带中文的输入框 */}
+                            {isRoleSelectDisabled ? (
+                                <Form.Item label="角色">
+                                    <Input
+                                        value={roleMap[editingWorker?.role as string]?.text}
+                                        disabled
+                                    />
+                                </Form.Item>
+                            ) : (
+                                <Form.Item name="role" label="角色" rules={[{ required: true }]}>
+                                    <Select>
+                                        {currentUser?.role === 'admin' && <Option value="manager">车间主任</Option>}
+                                        <Option value="worker">员工</Option>
+                                        <Option value="pattern_maker">打版员</Option>
+                                    </Select>
+                                </Form.Item>
+                            )}
                         </Col>
                         <Col span={12}>
                             <Form.Item name="is_active" label="状态" valuePropName="checked">
