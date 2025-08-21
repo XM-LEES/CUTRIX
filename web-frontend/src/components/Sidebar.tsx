@@ -26,24 +26,24 @@ const Sidebar: React.FC = () => {
       label: '仪表板',
     },
     {
+      key: '/orders',
+      icon: <FileTextOutlined />, // 使用新图标
+      label: '生产订单',
+    },
+    {
+      key: '/planning',
+      icon: <UnorderedListOutlined />,
+      label: '生产计划',
+    },
+    {
+      key: '/monitoring',
+      icon: <BlockOutlined />,
+      label: '进度监控',
+    },
+    {
       key: '/styles',
       icon: <TagsOutlined />,
-      label: '款号管理',
-    },
-    {
-      key: '/tasks',
-      icon: <UnorderedListOutlined />,
-      label: '生产任务',
-    },
-    {
-      key: '/fabric-rolls',
-      icon: <BlockOutlined />,
-      label: '布匹管理',
-    },
-    {
-      key: '/production-logs',
-      icon: <FileTextOutlined />,
-      label: '生产记录',
+      label: '基础数据', // 将款号等归入基础数据
     },
     {
       key: '/workers',

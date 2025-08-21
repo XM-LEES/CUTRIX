@@ -11,6 +11,9 @@ import Workers from './pages/Workers';
 import LoginPage from './pages/Login';
 import { useAuthStore } from './store/authStore';
 import { LogoutOutlined } from '@ant-design/icons';
+import ProductionOrders from './pages/ProductionOrders'; // 新增
+import ProductionPlanning from './pages/ProductionPlanning'; // 新增
+import ProductionMonitoring from './pages/ProductionMonitoring'; // 新增
 const { Title } = Typography;
 
 const { Content } = Layout;
@@ -22,18 +25,18 @@ const AdminLayout: FC = () => (
       <Content style={{ padding: '24px', background: '#f0f2f5' }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/styles" element={<Styles />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/fabric-rolls" element={<FabricRolls />} />
-          <Route path="/production-logs" element={<ProductionLogs />} />
+          <Route path="/orders" element={<ProductionOrders />} />
+          <Route path="/planning" element={<ProductionPlanning />} />
+          <Route path="/monitoring" element={<ProductionMonitoring />} />
+          <Route path="/styles" element={<Styles />} /> 
           <Route path="/workers" element={<Workers />} />
+          {/* 旧的/tasks路由可以暂时移除或重定向 */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Content>
     </Layout>
   </Layout>
 );
-
 // 员工视图 (占位符)
 const WorkerLayout: FC = () => (
   <div style={{ padding: 40 }}>

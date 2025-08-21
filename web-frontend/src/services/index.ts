@@ -1,19 +1,10 @@
 import { apiService } from './api';
 import { 
-  Style, 
-  CreateStyleRequest,
-  OrderDetail,
-  CreateOrderRequest,
-  ProductionTask,
-  CreateTaskRequest,
-  TaskProgress,
-  FabricRoll,
-  CreateFabricRollRequest,
-  ProductionLog,
-  CreateProductionLogRequest,
-  Worker,
-  CreateWorkerRequest,
-  UpdateWorkerRequest
+  Style, CreateStyleRequest,
+  ProductionTask, 
+  Worker, CreateWorkerRequest, UpdateWorkerRequest,
+  ProductionOrder, CreateProductionOrderRequest,
+  ProductionPlan, CreateProductionPlanRequest
 } from '../types';
 
 // 款号服务
@@ -23,32 +14,24 @@ export const styleService = {
   createStyle: (data: CreateStyleRequest) => apiService.post<Style>('/styles', data),
 };
 
-// 订单服务
-export const orderService = {
-  getOrders: () => apiService.get<OrderDetail[]>('/orders'),
-  getOrder: (id: number) => apiService.get<OrderDetail>(`/orders/${id}`),
-  createOrder: (data: CreateOrderRequest) => apiService.post<OrderDetail>('/orders', data),
+// (新) 生产订单服务
+export const productionOrderService = {
+  getOrders: () => apiService.get<ProductionOrder[]>('/production-orders'),
+  getOrder: (id: number) => apiService.get<ProductionOrder>(`/production-orders/${id}`),
+  createOrder: (data: CreateProductionOrderRequest) => apiService.post<ProductionOrder>('/production-orders', data),
 };
 
-// 任务服务
+// (新) 生产计划服务
+export const productionPlanService = {
+  getPlans: () => apiService.get<ProductionPlan[]>('/production-plans'),
+  getPlan: (id: number) => apiService.get<ProductionPlan>(`/production-plans/${id}`),
+  createPlan: (data: CreateProductionPlanRequest) => apiService.post<ProductionPlan>('/production-plans', data),
+};
+
+// 任务服务 (保持，但调用方会改变)
 export const taskService = {
   getTasks: () => apiService.get<ProductionTask[]>('/tasks'),
-  getTask: (id: number) => apiService.get<ProductionTask>(`/tasks/${id}`),
-  createTask: (data: CreateTaskRequest) => apiService.post<ProductionTask>('/tasks', data),
-  getTaskProgress: () => apiService.get<TaskProgress[]>('/tasks/progress'),
-};
-
-// 布匹服务
-export const fabricService = {
-  getFabricRolls: () => apiService.get<FabricRoll[]>('/fabric-rolls'),
-  getFabricRoll: (id: string) => apiService.get<FabricRoll>(`/fabric-rolls/${id}`),
-  createFabricRoll: (data: CreateFabricRollRequest) => apiService.post<FabricRoll>('/fabric-rolls', data),
-};
-
-// 生产记录服务
-export const logService = {
-  getProductionLogs: () => apiService.get<ProductionLog[]>('/production-logs'),
-  createProductionLog: (data: CreateProductionLogRequest) => apiService.post<ProductionLog>('/production-logs', data),
+  // ... 其他任务相关API
 };
 
 // 员工服务
@@ -61,5 +44,5 @@ export const workerService = {
   getWorkerTasks: (workerId: number) => apiService.get<ProductionTask[]>(`/workers/${workerId}/tasks`),
 };
 
-// 登陆服务
+// 登录服务
 export { authService } from './authService';
