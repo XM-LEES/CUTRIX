@@ -48,7 +48,18 @@ const Workers: React.FC = () => {
 
     const onFinish = (values: any) => {
         if (editingWorker) {
-            handleAction(() => updateWorker(editingWorker.worker_id, values), '员工更新成功', '更新失败');
+            const isEditingSelf = editingWorker.worker_id === currentUser?.worker_id;
+            let finalValues = values;
+
+            // 如果是编辑自己，则将被禁用的字段（如角色和状态）的值从原始数据中合并回来
+            if (isEditingSelf) {
+                finalValues = {
+                    ...editingWorker, // 使用原始员工数据作为基础
+                    ...values,       // 用表单中可编辑的字段值覆盖
+                };
+            }
+            
+            handleAction(() => updateWorker(editingWorker.worker_id, finalValues), '员工更新成功', '更新失败');
         } else {
             handleAction(() => createWorker(values), '员工创建成功', '创建失败');
         }
@@ -103,7 +114,7 @@ const Workers: React.FC = () => {
             width: 240,
             render: (_: any, record: Worker) => {
                 let canEdit = true;
-                if (currentUser?.role === 'manager' && (record.role === 'admin' || record.worker_id === currentUser.worker_id)) {
+                if (currentUser?.role === 'manager' && record.role === 'admin') {
                     canEdit = false;
                 }
                 let canChangePassword = true;
@@ -127,7 +138,7 @@ const Workers: React.FC = () => {
     // 判断是否是管理员/主任在编辑自己的信息
     const isEditingSelf = editingWorker?.worker_id === currentUser?.worker_id;
     // 角色下拉菜单禁用条件：管理员在编辑自己时
-    const isRoleSelectDisabled = isEditingSelf && currentUser?.role === 'admin';
+    const isRoleSelectDisabled = isEditingSelf && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
     // 在职状态开关禁用条件：管理员或主任在编辑自己时
     const isStatusSwitchDisabled = isEditingSelf && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
     // 姓名输入框禁用条件
