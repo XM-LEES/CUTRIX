@@ -104,6 +104,8 @@ export interface Worker {
 export interface CreateWorkerRequest {
   name: string;
   notes: string;
+  role: 'admin' | 'worker';
+  is_active: boolean;
 }
 
 export interface UpdateWorkerRequest {

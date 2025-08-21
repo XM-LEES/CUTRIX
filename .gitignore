@@ -43,3 +43,6 @@ backend/*.exe
 # 忽略 Docker 卷数据
 postgres_data/
 redis_data/
+
+# 忽略 AI 配置文件
++ /.claude/

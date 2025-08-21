@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { WorkerState, Worker, UpdateWorkerRequest } from '../types'; 
+import { WorkerState, Worker, UpdateWorkerRequest, CreateWorkerRequest } from '../types'; // 导入 CreateWorkerRequest
 import { workerService } from '../services';
 
 export const useWorkerStore = create<WorkerState & {
   fetchWorkers: () => Promise<void>;
-  createWorker: (data: { name: string; notes: string }) => Promise<void>;
+  createWorker: (data: CreateWorkerRequest) => Promise<void>;
   updateWorker: (id: number, data: UpdateWorkerRequest) => Promise<void>;
   deleteWorker: (id: number) => Promise<void>;
   setCurrentWorker: (worker: Worker | null) => void;

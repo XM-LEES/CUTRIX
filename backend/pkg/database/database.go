@@ -1,12 +1,11 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func Initialize(databaseURL string) (*sqlx.DB, error) {
@@ -35,8 +34,4 @@ func Initialize(databaseURL string) (*sqlx.DB, error) {
 
 	fmt.Println("Database connection established successfully")
 	return db, nil
-}
-
-func GetDB(databaseURL string) (*sql.DB, error) {
-	return sql.Open("postgres", databaseURL)
 }

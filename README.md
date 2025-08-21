@@ -4,6 +4,12 @@
 
 ## 🏗️ 技术架构
 
+系统围绕**计划与执行分离**的核心原则设计，确保数据的清晰与准确。
+
+- **计划层 (`Production_Tasks`)**: 管理层下达的生产指令，定义了“应该做什么”。
+- **执行层 (`Production_Logs`)**: 工人实际操作的记录，是“实际发生了什么”的唯一真实来源。
+
+
 ### 后端 (Backend)
 - **语言**: Go 1.24+
 - **Web框架**: Gin
@@ -58,26 +64,33 @@
    - API 健康检查: http://localhost:8080/health
 
 ### 开发模式
+如果需要同时开发前后端，推荐使用开发模式，支持热重载。
 
-如果你需要同时开发前后端：
+Windows: build.bat dev
+Linux/macOS: ./build.sh dev
 
-1. **启动后端服务**
-   ```bash
-   docker-compose up -d postgres  # 只启动数据库
-   cd backend
-   go run cmd/main.go
-   ```
+前端开发服务器: http://localhost:3000
 
-2. **启动前端开发服务器**
-   ```bash
-   cd web-frontend
-   npm install
-   npm run dev
-   ```
+后端 API: http://localhost:8080
 
-3. **访问地址**
-   - 前端开发服务器: http://localhost:3000
-   - 后端 API: http://localhost:8080
+
+### 数据库管理
+我们提供了便捷的数据库管理脚本 db.bat (Windows) 和 db.sh (Linux/macOS)。
+
+Bash
+
+# 查看数据库状态、表结构和数据统计
+./db.sh status
+
+# 连接到 psql 命令行
+./db.sh connect
+
+# 重置数据库 (清空所有数据并保留结构)
+./db.sh reset
+
+# 插入预设的测试数据
+./db.sh seed
+
 
 ## 📁 项目结构
 
@@ -220,65 +233,51 @@ server {
 - 引入消息队列
 - 实现分布式链路追踪
 
-## 🔧 API 文档
+## 🔧 API 端点
+基础URL: http://localhost:8080/api
 
-### 基础URL
-- 开发环境: `http://localhost:8080/api`
-- 生产环境: `https://your-domain.com/api`
+认证: POST /api/auth/login
 
-### 主要接口
+款号: GET, POST /api/styles, GET /api/styles/:id
 
-#### 款号管理
-- `POST /api/styles` - 创建款号
-- `GET /api/styles` - 获取款号列表
-- `GET /api/styles/:id` - 获取款号详情
+订单: GET, POST /api/orders, GET /api/orders/:id
 
-#### 订单管理
-- `POST /api/orders` - 录入订单明细
-- `GET /api/orders` - 获取订单列表
-- `GET /api/orders/:id` - 获取订单详情
+任务: GET, POST /api/tasks, GET /api/tasks/:id, GET /api/tasks/progress
 
-#### 生产任务管理
-- `POST /api/tasks` - 创建生产任务
-- `GET /api/tasks` - 获取任务列表
-- `GET /api/tasks/:id` - 获取任务详情
-- `GET /api/tasks/progress` - 获取任务进度
+布匹: GET, POST /api/fabric-rolls, GET /api/fabric-rolls/:id
 
-#### 布匹管理
-- `POST /api/fabric-rolls` - 注册布匹
-- `GET /api/fabric-rolls` - 获取布匹列表
-- `GET /api/fabric-rolls/:id` - 获取布匹详情
+日志: GET, POST /api/production-logs
 
-#### 生产记录
-- `POST /api/production-logs` - 记录生产操作
-- `GET /api/production-logs` - 获取生产记录
+员工: GET, POST, PUT, DELETE /api/workers, GET /api/workers/:id/tasks
 
-#### 员工管理
-- `GET /api/workers` - 获取员工列表
-- `GET /api/workers/:id/tasks` - 获取员工任务列表
+## 🗄️  数据库设计与核心业务逻辑
+系统基于6张核心表构建：
 
-## 🗄️ 数据库设计
+Styles: 产品款号定义。
 
-系统采用6张核心表：
+Order_Details: 原始订单需求。
 
-1. **Styles** - 款号表
-2. **Order_Details** - 订单明细表
-3. **Production_Tasks** - 生产任务表
-4. **Fabric_Rolls** - 布匹表
-5. **Production_Logs** - 生产记录表
-6. **Workers** - 员工表
+Production_Tasks: 生产任务，包含计划层数和实际完成层数。
 
-### 关键机制
-- 通过数据库触发器自动汇总completed_layers字段
-- 使用parent_log_id建立工序追踪链
-- 布匹ID采用[款号]-[颜色]-[序号]格式生成
+Fabric_Rolls: 布匹物料，每匹布都有唯一ID ([款号]-[颜色]-[序号])。
 
-## 🛡️ 安全考虑
+Production_Logs: 操作的唯一真实来源 (Single Source of Truth)，记录放料、拉布、裁剪、打包等所有操作。
 
-- JWT Token 认证（预留接口）
-- 参数化查询防止 SQL 注入
-- CORS 跨域保护
-- 输入验证和过滤
+Workers: 员工信息。
+
+关键业务流与自动化机制
+计划: 管理员创建 Styles -> 录入 Order_Details -> 下达 Production_Tasks。
+
+物料准备: 注册 Fabric_Rolls，系统自动生成唯一ID。
+
+执行与追踪:
+
+当工人完成拉布操作并提交 Production_Logs 记录时，数据库触发器 trg_after_spreading_log_insert 会自动更新 Production_Tasks 表中对应任务的 completed_layers 字段。
+
+严禁在应用代码中手动修改 completed_layers。所有进度更新都源于 Production_Logs 的插入。
+
+裁剪、打包等后续工序通过 parent_log_id 形成追踪链。
+
 
 ## 🐛 故障排除
 

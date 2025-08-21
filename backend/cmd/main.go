@@ -56,7 +56,7 @@ func main() {
 	workerRepo := repositories.NewWorkerRepository(db)
 
 	// ======== 统一初始化所有服务 (Services) ========
-	authService := services.NewAuthService(workerRepo) // 新增认证服务
+	authService := services.NewAuthService(workerRepo)
 	styleService := services.NewStyleService(styleRepo)
 	orderService := services.NewOrderService(orderRepo, styleRepo)
 	taskService := services.NewTaskService(taskRepo, styleRepo)
@@ -66,7 +66,7 @@ func main() {
 	workerManagementService := services.NewWorkerManagementService(workerRepo)
 
 	// ======== 统一初始化所有处理器 (Handlers) ========
-	authHandler := handlers.NewAuthHandler(authService) // 新增认证处理器
+	authHandler := handlers.NewAuthHandler(authService)
 	styleHandler := handlers.NewStyleHandler(styleService)
 	orderHandler := handlers.NewOrderHandler(orderService)
 	taskHandler := handlers.NewTaskHandler(taskService)

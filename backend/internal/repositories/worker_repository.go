@@ -28,14 +28,14 @@ func NewWorkerRepository(db *sqlx.DB) WorkerRepository {
 	return &workerRepository{db: db}
 }
 
-// (修改) 定义一个包含所有字段的基础查询语句，方便复用
+// 定义一个包含所有字段的基础查询语句，方便复用
 const workerQueryFields = `
-	worker_id, 
-	name, 
-	password_hash, 
-	role, 
-	is_active, 
-	COALESCE(notes, '') as notes
+    worker_id, 
+    name, 
+    COALESCE(password_hash, '') as password_hash, 
+    role, 
+    is_active, 
+    COALESCE(notes, '') as notes
 `
 
 func (r *workerRepository) GetByID(id int) (*models.Worker, error) {
@@ -82,10 +82,15 @@ func (r *workerRepository) GetAll() ([]*models.Worker, error) {
 
 func (r *workerRepository) Create(workerReq *models.CreateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
-	// 注意: 创建时我们不设置password等字段，这些应通过特定流程管理
-	query := `INSERT INTO Workers (name, notes) VALUES ($1, $2) RETURNING worker_id, name, COALESCE(notes, '') as notes`
-
-	err := r.db.QueryRow(query, workerReq.Name, workerReq.Notes).Scan(&worker.WorkerID, &worker.Name, &worker.Notes)
+	// 更新: 插入时还应处理 role 和 is_active，并返回所有字段
+	query := `
+		INSERT INTO Workers (name, notes, role, is_active) 
+		VALUES ($1, $2, $3, $4) 
+		RETURNING ` + workerQueryFields
+	// 注意：新员工默认角色是 'worker'，状态是 'true' (在职)
+	// 这些值可以从请求中获取，如果请求模型中没有，则使用默认值
+	// 这里我们假设前端会提供这些值，或者我们使用默认值
+	err := r.db.QueryRowx(query, workerReq.Name, workerReq.Notes, workerReq.Role, workerReq.IsActive).StructScan(&worker)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create worker: %w", err)
 	}
