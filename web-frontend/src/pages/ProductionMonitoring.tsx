@@ -6,7 +6,7 @@ import { usePlanStore } from '../store/planStore';
 import { useStyleStore } from '../store/styleStore';
 import { useOrderStore } from '../store/orderStore';
 // highlight-start
-import type { ProductionPlan, ProductionOrder, CuttingLayout, ProductionTask, OrderItem } from '../types';
+import type { ProductionPlan, ProductionOrder, ProductionTask, OrderItem } from '../types';
 // highlight-end
 import dayjs from 'dayjs';
 

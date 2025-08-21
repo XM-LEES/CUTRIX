@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { PlanState, ProductionPlan, CreateProductionPlanRequest } from '../types';
+import type { PlanState } from '../types';
+import { CreateProductionPlanRequest } from '../types';
 import { productionPlanService } from '../services';
 
 type PlanActions = {

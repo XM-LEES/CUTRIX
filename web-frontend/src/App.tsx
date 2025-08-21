@@ -4,9 +4,6 @@ import { Layout, Button, Typography } from 'antd';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Styles from './pages/Styles';
-import Tasks from './pages/Tasks';
-import FabricRolls from './pages/FabricRolls';
-import ProductionLogs from './pages/ProductionLogs';
 import Workers from './pages/Workers';
 import LoginPage from './pages/Login';
 import { useAuthStore } from './store/authStore';
@@ -30,7 +27,6 @@ const AdminLayout: FC = () => (
           <Route path="/monitoring" element={<ProductionMonitoring />} />
           <Route path="/styles" element={<Styles />} /> 
           <Route path="/workers" element={<Workers />} />
-          {/* 旧的/tasks路由可以暂时移除或重定向 */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Content>

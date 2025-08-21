@@ -95,7 +95,7 @@ const ProductionOrders: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: ProductionOrder) => (
+      render: (_: any, _record: ProductionOrder) => (
         <Space size="middle">
           <Button icon={<EyeOutlined />} size="small">
             查看详情

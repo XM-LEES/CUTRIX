@@ -6,6 +6,12 @@ export interface APIResponse<T = any> {
   error?: string;
 }
 
+// ApiConfig 接口
+export interface ApiConfig {
+  baseURL: string;
+  timeout: number;
+}
+
 export interface User {
   worker_id: number;
   name: string;

@@ -7,7 +7,7 @@ import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { usePlanStore } from '../store/planStore';
 import { useStyleStore } from '../store/styleStore';
 import { useOrderStore } from '../store/orderStore';
-import type { ProductionPlan, Style, ProductionOrder, CuttingLayout, LayoutSizeRatio, ProductionTask } from '../types';
+import type { ProductionPlan, Style, ProductionOrder } from '../types';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -56,7 +56,7 @@ const ProductionPlanning: React.FC = () => {
     { title: '创建时间', dataIndex: 'created_at', key: 'created_at', render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm') },
     {
       title: '操作', key: 'action',
-      render: (_: any, record: ProductionPlan) => (
+      render: (_: any, _record: ProductionPlan) => (
         <Space size="middle">
           <Button icon={<EyeOutlined />} size="small">查看详情</Button>
         </Space>

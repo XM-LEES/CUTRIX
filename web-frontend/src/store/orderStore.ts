@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { OrderState, ProductionOrder, CreateProductionOrderRequest } from '../types';
+import type { OrderState } from '../types';
+import { CreateProductionOrderRequest } from '../types';
 import { productionOrderService } from '../services';
 
 type OrderActions = {

@@ -28,10 +28,10 @@ export const productionPlanService = {
   createPlan: (data: CreateProductionPlanRequest) => apiService.post<ProductionPlan>('/production-plans', data),
 };
 
-// 任务服务 (保持，但调用方会改变)
+// 任务服务 (只读)
 export const taskService = {
   getTasks: () => apiService.get<ProductionTask[]>('/tasks'),
-  // ... 其他任务相关API
+  // getTask, getTaskProgress 等 API 暂时不存在或不需要，故移除
 };
 
 // 员工服务
