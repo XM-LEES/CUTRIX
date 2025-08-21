@@ -70,7 +70,7 @@ const App: FC = () => {
 
   return (
     <Router>
-      {user?.role === 'admin' ? <AdminLayout /> : <WorkerLayout />}
+      {user?.role === 'admin' || user?.role === 'manager' ? <AdminLayout /> : <WorkerLayout />}
     </Router>
   );
 };

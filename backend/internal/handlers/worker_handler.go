@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,13 +12,13 @@ import (
 )
 
 type WorkerHandler struct {
-	workerQueryService    services.WorkerQueryService
+	workerQueryService      services.WorkerQueryService
 	workerManagementService services.WorkerManagementService
 }
 
 func NewWorkerHandler(workerQueryService services.WorkerQueryService, workerManagementService services.WorkerManagementService) *WorkerHandler {
 	return &WorkerHandler{
-		workerQueryService:    workerQueryService,
+		workerQueryService:      workerQueryService,
 		workerManagementService: workerManagementService,
 	}
 }
@@ -82,6 +83,22 @@ func (h *WorkerHandler) CreateWorker(c *gin.Context) {
 		return
 	}
 
+	// 权限和业务规则检查
+	// 规则：确保系统中只有一个 admin 和一个 manager
+	if req.Role == "admin" || req.Role == "manager" {
+		allWorkers, err := h.workerQueryService.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIResponse{Success: false, Message: "无法验证角色唯一性", Error: err.Error()})
+			return
+		}
+		for _, w := range allWorkers {
+			if w.Role == req.Role {
+				c.JSON(http.StatusBadRequest, models.APIResponse{Success: false, Message: "创建失败", Error: fmt.Sprintf("角色 '%s' 已存在，且只能有一个", req.Role)})
+				return
+			}
+		}
+	}
+
 	worker, err := h.workerManagementService.Create(&req)
 	if err != nil {
 		// Check if it's a validation error
@@ -129,6 +146,21 @@ func (h *WorkerHandler) UpdateWorker(c *gin.Context) {
 			Error:   err.Error(),
 		})
 		return
+	}
+
+	// 规则：确保系统中只有一个 admin 和一个 manager
+	if req.Role == "admin" || req.Role == "manager" {
+		allWorkers, err := h.workerQueryService.GetAll()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.APIResponse{Success: false, Message: "无法验证角色唯一性", Error: err.Error()})
+			return
+		}
+		for _, w := range allWorkers {
+			if w.Role == req.Role && w.WorkerID != id { // 确保不是员工自己
+				c.JSON(http.StatusBadRequest, models.APIResponse{Success: false, Message: "更新失败", Error: fmt.Sprintf("角色 '%s' 已存在，且只能有一个", req.Role)})
+				return
+			}
+		}
 	}
 
 	worker, err := h.workerManagementService.Update(id, &req)

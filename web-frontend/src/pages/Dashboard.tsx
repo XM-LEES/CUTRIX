@@ -7,29 +7,34 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { useStyleStore } from '../store/styleStore';
-import { useTaskStore } from '../store/taskStore';
+import { usePlanStore } from '../store/planStore'; // 替换：使用 planStore
 import { useWorkerStore } from '../store/workerStore';
+import type { ProductionTask } from '../types'; // 新增：为 task 参数提供类型
 
 const { Title } = Typography;
 
 const Dashboard: React.FC = () => {
   // 从各自的 store 中获取数据和加载状态
   const { styles, fetchStyles, loading: stylesLoading } = useStyleStore();
-  const { tasks, fetchTasks, loading: tasksLoading } = useTaskStore();
+  const { plans, fetchPlans, loading: plansLoading } = usePlanStore(); // 替换：使用 planStore
   const { workers, fetchWorkers, loading: workersLoading } = useWorkerStore();
 
   // 组件加载时，触发所有数据获取函数
   useEffect(() => {
     fetchStyles();
-    fetchTasks();
+    fetchPlans(); // 替换：获取 plans
     fetchWorkers();
-  }, [fetchStyles, fetchTasks, fetchWorkers]);
+  }, [fetchStyles, fetchPlans, fetchWorkers]);
 
-  // 计算待完成任务数 (计划层数 > 已完成层数)
-  const pendingTasks = tasks.filter(task => task.planned_layers > task.completed_layers).length;
+  // 修改：从所有计划的所有任务中计算待完成任务数
+  const pendingTasks = plans
+    .flatMap(plan => plan.layouts ?? [])
+    .flatMap(layout => layout.tasks ?? [])
+    .filter((task: ProductionTask) => task.planned_layers > task.completed_layers)
+    .length;
 
   // 统一的加载状态
-  const isLoading = stylesLoading || tasksLoading || workersLoading;
+  const isLoading = stylesLoading || plansLoading || workersLoading; // 替换：使用 plansLoading
 
   if (isLoading) {
     return (

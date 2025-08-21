@@ -10,7 +10,8 @@ CREATE TABLE Workers (
     name VARCHAR(50) NOT NULL UNIQUE,
     notes VARCHAR(150),
     password_hash VARCHAR(255),
-    role VARCHAR(20) NOT NULL DEFAULT 'worker',
+    role VARCHAR(20) NOT NULL DEFAULT 'worker' CHECK (role IN ('admin', 'manager', 'worker', 'pattern_maker')),
+    worker_group VARCHAR(50),
     is_active BOOLEAN NOT NULL DEFAULT true
 );
 
@@ -123,10 +124,11 @@ CREATE UNIQUE INDEX idx_workers_name ON Workers(name);
 
 -- 插入示例数据
 INSERT INTO Workers (name, password_hash, role) VALUES
-('admin', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'admin'), 
+('admin', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'admin'),
+('manager', '$2a$12$gwwSt9.uKHrxcCffsmgc0OvsdcRa1qldHE4bR/XrKNlYMK6IRyGty', 'manager'),
 ('张三', '', 'worker'),
 ('李四', '', 'worker'),
-('王五', '', 'worker')
+('王五', '', 'pattern_maker')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO Styles (style_number) VALUES 

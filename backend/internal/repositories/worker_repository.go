@@ -35,7 +35,8 @@ const workerQueryFields = `
     COALESCE(password_hash, '') as password_hash, 
     role, 
     is_active, 
-    COALESCE(notes, '') as notes
+    COALESCE(notes, '') as notes,
+    worker_group
 `
 
 func (r *workerRepository) GetByID(id int) (*models.Worker, error) {
@@ -82,31 +83,26 @@ func (r *workerRepository) GetAll() ([]*models.Worker, error) {
 
 func (r *workerRepository) Create(workerReq *models.CreateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
-	// 更新: 插入时还应处理 role 和 is_active，并返回所有字段
 	query := `
-		INSERT INTO Workers (name, notes, role, is_active) 
-		VALUES ($1, $2, $3, $4) 
-		RETURNING ` + workerQueryFields
-	// 注意：新员工默认角色是 'worker'，状态是 'true' (在职)
-	// 这些值可以从请求中获取，如果请求模型中没有，则使用默认值
-	// 这里我们假设前端会提供这些值，或者我们使用默认值
-	err := r.db.QueryRowx(query, workerReq.Name, workerReq.Notes, workerReq.Role, workerReq.IsActive).StructScan(&worker)
+        INSERT INTO Workers (name, notes, role, is_active, worker_group) 
+        VALUES ($1, $2, $3, $4, $5) 
+        RETURNING ` + workerQueryFields
+	err := r.db.QueryRowx(query, workerReq.Name, workerReq.Notes, workerReq.Role, workerReq.IsActive, workerReq.WorkerGroup).StructScan(&worker)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create worker: %w", err)
 	}
-
 	return &worker, nil
 }
 
 func (r *workerRepository) Update(id int, workerReq *models.UpdateWorkerRequest) (*models.Worker, error) {
 	var worker models.Worker
 	query := `
-		UPDATE Workers 
-		SET name = $1, notes = $2, role = $3, is_active = $4 
-		WHERE worker_id = $5 
-		RETURNING ` + workerQueryFields
+        UPDATE Workers 
+        SET name = $1, notes = $2, role = $3, is_active = $4, worker_group = $5
+        WHERE worker_id = $6 
+        RETURNING ` + workerQueryFields
 
-	err := r.db.Get(&worker, query, workerReq.Name, workerReq.Notes, workerReq.Role, workerReq.IsActive, id)
+	err := r.db.Get(&worker, query, workerReq.Name, workerReq.Notes, workerReq.Role, workerReq.IsActive, workerReq.WorkerGroup, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("worker not found")

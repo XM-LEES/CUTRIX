@@ -12,10 +12,12 @@ export interface ApiConfig {
   timeout: number;
 }
 
+export type UserRole = 'admin' | 'manager' | 'worker' | 'pattern_maker';
+
 export interface User {
   worker_id: number;
   name: string;
-  role: 'admin' | 'worker';
+  role: UserRole;
   notes: string;
 }
 
@@ -45,7 +47,8 @@ export interface Worker {
   worker_id: number;
   name: string;
   notes: string;
-  role: 'admin' | 'worker';
+  role: UserRole;
+  worker_group?: string;
   is_active: boolean;
 }
 
@@ -131,14 +134,16 @@ export interface CreateStyleRequest {
 export interface CreateWorkerRequest {
   name: string;
   notes: string;
-  role: 'admin' | 'worker';
+  role: UserRole;
+  worker_group?: string;
   is_active: boolean;
 }
 
 export interface UpdateWorkerRequest {
   name: string;
   notes: string;
-  role: 'admin' | 'worker';
+  role: UserRole;
+  worker_group?: string;
   is_active: boolean;
 }
 

@@ -5,15 +5,6 @@ import (
 	"cutrix-backend/internal/repositories"
 )
 
-// ValidationError 自定义验证错误类型
-type ValidationError struct {
-	Message string
-}
-
-func (e *ValidationError) Error() string {
-	return e.Message
-}
-
 type WorkerManagementService interface {
 	Create(worker *models.CreateWorkerRequest) (*models.Worker, error)
 	Update(id int, worker *models.UpdateWorkerRequest) (*models.Worker, error)
@@ -46,7 +37,8 @@ func (s *workerManagementService) Update(id int, workerReq *models.UpdateWorkerR
 	}
 
 	// 验证角色值
-	if workerReq.Role != "admin" && workerReq.Role != "worker" {
+	validRoles := map[string]bool{"admin": true, "manager": true, "worker": true, "pattern_maker": true}
+	if !validRoles[workerReq.Role] {
 		return nil, &ValidationError{Message: "无效的角色"}
 	}
 
@@ -55,9 +47,14 @@ func (s *workerManagementService) Update(id int, workerReq *models.UpdateWorkerR
 
 func (s *workerManagementService) Delete(id int) error {
 	// Check if worker exists
-	_, err := s.workerRepo.GetByID(id)
+	worker, err := s.workerRepo.GetByID(id)
 	if err != nil {
-		return err
+		return err // worker not found
+	}
+
+	// 禁止删除 admin
+	if worker.Role == "admin" {
+		return &ValidationError{Message: "不能删除管理员账户"}
 	}
 
 	return s.workerRepo.Delete(id)

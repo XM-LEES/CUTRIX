@@ -10,12 +10,13 @@ type Style struct {
 }
 
 type Worker struct {
-	WorkerID     int    `json:"worker_id" db:"worker_id"`
-	Name         string `json:"name" db:"name" validate:"required"`
-	Notes        string `json:"notes" db:"notes"`
-	PasswordHash string `json:"-" db:"password_hash"`
-	Role         string `json:"role" db:"role"`
-	IsActive     bool   `json:"is_active" db:"is_active"`
+	WorkerID     int     `json:"worker_id" db:"worker_id"`
+	Name         string  `json:"name" db:"name" validate:"required"`
+	Notes        string  `json:"notes" db:"notes"`
+	PasswordHash string  `json:"-" db:"password_hash"`
+	Role         string  `json:"role" db:"role"`
+	WorkerGroup  *string `json:"worker_group" db:"worker_group"`
+	IsActive     bool    `json:"is_active" db:"is_active"`
 }
 
 type FabricRoll struct {
@@ -112,17 +113,19 @@ type CreateStyleRequest struct {
 
 // 员工
 type CreateWorkerRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Notes    string `json:"notes"`
-	Role     string `json:"role" validate:"oneof=admin worker"`
-	IsActive bool   `json:"is_active"`
+	Name        string  `json:"name" validate:"required"`
+	Notes       string  `json:"notes"`
+	Role        string  `json:"role" validate:"required,oneof=admin manager worker pattern_maker"` // 修改
+	WorkerGroup *string `json:"worker_group"`                                                      // 新增
+	IsActive    bool    `json:"is_active"`
 }
 
 type UpdateWorkerRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Notes    string `json:"notes"`
-	Role     string `json:"role" validate:"oneof=admin worker"`
-	IsActive bool   `json:"is_active"`
+	Name        string  `json:"name" validate:"required"`
+	Notes       string  `json:"notes"`
+	Role        string  `json:"role" validate:"required,oneof=admin manager worker pattern_maker"` // 修改
+	WorkerGroup *string `json:"worker_group"`                                                      // 新增
+	IsActive    bool    `json:"is_active"`
 }
 
 // 布匹
