@@ -150,7 +150,7 @@ export interface UpdateWorkerRequest {
 // (新) 订单请求
 export interface CreateProductionOrderRequest {
     order_number: string;
-    style_id: number;
+    style_number: string;
     items: Array<{
         color: string;
         size: string;

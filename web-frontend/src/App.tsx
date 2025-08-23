@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Layout, Button, Typography } from 'antd';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
-import Styles from './pages/Styles';
 import Workers from './pages/Workers';
 import LoginPage from './pages/Login';
 import { useAuthStore } from './store/authStore';
@@ -25,7 +24,6 @@ const AdminLayout: FC = () => (
           <Route path="/orders" element={<ProductionOrders />} />
           <Route path="/planning" element={<ProductionPlanning />} />
           <Route path="/monitoring" element={<ProductionMonitoring />} />
-          <Route path="/styles" element={<Styles />} /> 
           <Route path="/workers" element={<Workers />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

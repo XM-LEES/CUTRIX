@@ -147,9 +147,10 @@ type CreateProductionLogRequest struct {
 // 订单 (新)
 type CreateProductionOrderRequest struct {
 	OrderNumber string            `json:"order_number" validate:"required"`
-	StyleID     int               `json:"style_id" validate:"required"`
+	StyleNumber string            `json:"style_number" validate:"required"`
 	Items       []CreateOrderItem `json:"items" validate:"required,min=1"`
 }
+
 type CreateOrderItem struct {
 	Color    string `json:"color" validate:"required"`
 	Size     string `json:"size" validate:"required"`

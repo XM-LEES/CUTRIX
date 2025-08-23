@@ -19,7 +19,7 @@ export const usePlanStore = create<PlanState & PlanActions>((set) => ({
     set({ loading: true, error: null });
     try {
       const plans = await productionPlanService.getPlans();
-      set({ plans, loading: false });
+      set({ plans: plans || [], loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
     }

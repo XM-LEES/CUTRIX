@@ -9,7 +9,8 @@ import (
 )
 
 type ProductionOrderRepository interface {
-	CreateOrder(tx *sqlx.Tx, order *models.CreateProductionOrderRequest) (*models.ProductionOrder, error)
+	// --- 修改函数签名 ---
+	CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error)
 	GetOrderWithItems(orderID int) (*models.ProductionOrder, error)
 	GetAllOrders() ([]models.ProductionOrder, error)
 }
@@ -23,11 +24,11 @@ func NewProductionOrderRepository(db *sqlx.DB) ProductionOrderRepository {
 }
 
 // CreateOrder 在一个事务中创建订单及其所有项目
-func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, req *models.CreateProductionOrderRequest) (*models.ProductionOrder, error) {
+func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error) {
 	// 1. 插入主订单表
 	orderQuery := `INSERT INTO Production_Orders (order_number, style_id) VALUES ($1, $2) RETURNING order_id, order_number, style_id, created_at`
 	var order models.ProductionOrder
-	err := tx.QueryRowx(orderQuery, req.OrderNumber, req.StyleID).StructScan(&order)
+	err := tx.QueryRowx(orderQuery, orderNumber, styleID).StructScan(&order)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert production order: %w", err)
 	}
@@ -40,7 +41,7 @@ func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, req *models.CreateP
 	}
 	defer stmt.Close()
 
-	for _, item := range req.Items {
+	for _, item := range items {
 		_, err := stmt.Exec(order.OrderID, item.Color, item.Size, item.Quantity)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert order item: %w", err)

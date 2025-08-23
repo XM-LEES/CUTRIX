@@ -47,7 +47,7 @@ func main() {
 	fabricRepo := repositories.NewFabricRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 	workerRepo := repositories.NewWorkerRepository(db)
-	orderRepo := repositories.NewProductionOrderRepository(db)
+	orderService := services.NewProductionOrderService(db, orderRepo, styleRepo)
 	planRepo := repositories.NewProductionPlanRepository(db)
 
 	// ======== 统一初始化所有服务 (Services) ========

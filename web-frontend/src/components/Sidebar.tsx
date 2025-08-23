@@ -3,7 +3,6 @@ import { Layout, Menu } from 'antd'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   DashboardOutlined,
-  TagsOutlined,
   UnorderedListOutlined,
   BlockOutlined,
   FileTextOutlined,
@@ -39,11 +38,6 @@ const Sidebar: React.FC = () => {
       key: '/monitoring',
       icon: <BlockOutlined />,
       label: '进度监控',
-    },
-    {
-      key: '/styles',
-      icon: <TagsOutlined />,
-      label: '基础数据', // 将款号等归入基础数据
     },
     {
       key: '/workers',

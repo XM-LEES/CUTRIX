@@ -15,12 +15,17 @@ type ProductionOrderService interface {
 }
 
 type productionOrderService struct {
+	db        *sqlx.DB
 	orderRepo repositories.ProductionOrderRepository
-	db        *sqlx.DB // DB instance for transactions
+	styleRepo repositories.StyleRepository // <-- 新增
 }
 
-func NewProductionOrderService(db *sqlx.DB, orderRepo repositories.ProductionOrderRepository) ProductionOrderService {
-	return &productionOrderService{db: db, orderRepo: orderRepo}
+func NewProductionOrderService(db *sqlx.DB, orderRepo repositories.ProductionOrderRepository, styleRepo repositories.StyleRepository) ProductionOrderService {
+	return &productionOrderService{
+		db:        db,
+		orderRepo: orderRepo,
+		styleRepo: styleRepo,
+	}
 }
 
 func (s *productionOrderService) CreateOrder(req *models.CreateProductionOrderRequest) (*models.ProductionOrder, error) {
@@ -28,9 +33,18 @@ func (s *productionOrderService) CreateOrder(req *models.CreateProductionOrderRe
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback() // Rollback on error
+	defer tx.Rollback()
 
-	order, err := s.orderRepo.CreateOrder(tx, req)
+	style, err := s.styleRepo.GetByNumber(req.StyleNumber)
+	if err != nil {
+		// 如果款号不存在，则创建它
+		style = &models.Style{StyleNumber: req.StyleNumber}
+		if err := s.styleRepo.CreateInTx(tx, style); err != nil {
+			return nil, fmt.Errorf("failed to create new style: %w", err)
+		}
+	}
+
+	order, err := s.orderRepo.CreateOrder(tx, req.OrderNumber, style.StyleID, req.Items)
 	if err != nil {
 		return nil, err
 	}

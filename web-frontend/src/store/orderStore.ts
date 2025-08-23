@@ -19,7 +19,7 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
     set({ loading: true, error: null });
     try {
       const orders = await productionOrderService.getOrders();
-      set({ orders, loading: false });
+      set({ orders: orders || [], loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
     }

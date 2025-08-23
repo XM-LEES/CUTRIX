@@ -11,18 +11,16 @@ import {
   Card,
   Row,
   Col,
-  Select,
   InputNumber,
   Popconfirm,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useOrderStore } from '../store/orderStore';
 import { useStyleStore } from '../store/styleStore';
-import type { ProductionOrder, Style } from '../types';
+import type { ProductionOrder } from '../types';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
-const { Option } = Select;
 
 const ProductionOrders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -154,17 +152,11 @@ const ProductionOrders: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name="style_id"
+                name="style_number" // <-- 修改 name
                 label="款号"
-                rules={[{ required: true, message: '请选择款号' }]}
+                rules={[{ required: true, message: '请输入款号' }]}
               >
-                <Select placeholder="请选择款号">
-                  {styles.map((style: Style) => (
-                    <Option key={style.style_id} value={style.style_id}>
-                      {style.style_number}
-                    </Option>
-                  ))}
-                </Select>
+                <Input placeholder="输入款号，如果不存在将自动创建" />
               </Form.Item>
             </Col>
           </Row>
