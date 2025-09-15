@@ -10,6 +10,7 @@ import type { ProductionOrder, CreateProductionOrderRequest } from '../types';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
+const { Search } = Input;
 
 // 常规尺码列表
 const REGULAR_SIZES = ['90', '100', '110', '120', '130', '140', '150', '160'];
@@ -24,7 +25,7 @@ const ProductionOrders: React.FC = () => {
   const { styles, fetchStyles } = useStyleStore();
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(); // Initial fetch for all orders
     fetchStyles();
   }, [fetchOrders, fetchStyles]);
 
@@ -79,6 +80,10 @@ const ProductionOrders: React.FC = () => {
     setIsDetailModalOpen(true);
     await fetchOrder(record.order_id);
   };
+  
+  const handleSearch = (value: string) => {
+    fetchOrders(value.trim());
+  };
 
   const mainColumns = [
     { title: '订单号', dataIndex: 'order_number', key: 'order_number', width: 220 },
@@ -111,12 +116,27 @@ const ProductionOrders: React.FC = () => {
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
         <Col><Title level={2}>生产订单管理</Title></Col>
-        <Col><Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>录入新订单</Button></Col>
       </Row>
       <Card>
+        <Row justify="space-between" style={{ marginBottom: 16 }}>
+            <Col>
+                <Search
+                placeholder="按款号搜索..."
+                onSearch={handleSearch}
+                style={{ width: 250 }}
+                allowClear
+                />
+            </Col>
+            <Col>
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+                录入新订单
+                </Button>
+            </Col>
+        </Row>
         <Table columns={mainColumns} dataSource={orders} rowKey="order_id" loading={loading} pagination={{ pageSize: 10 }} />
       </Card>
       
+      {/* Modals remain the same... */}
       <Modal
         title="录入新生产订单"
         open={isModalOpen}

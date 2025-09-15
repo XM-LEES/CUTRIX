@@ -12,7 +12,7 @@ import (
 type ProductionOrderService interface {
 	CreateOrder(order *models.CreateProductionOrderRequest) (*models.ProductionOrder, error)
 	GetOrderByID(id int) (*models.ProductionOrder, error)
-	GetAllOrders() ([]models.ProductionOrder, error)
+	GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error)
 	DeleteOrderByID(id int) error
 }
 
@@ -74,8 +74,8 @@ func (s *productionOrderService) GetOrderByID(id int) (*models.ProductionOrder, 
 	return s.orderRepo.GetOrderWithItems(id)
 }
 
-func (s *productionOrderService) GetAllOrders() ([]models.ProductionOrder, error) {
-	return s.orderRepo.GetAllOrders()
+func (s *productionOrderService) GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error) {
+	return s.orderRepo.GetAllOrders(styleNumberQuery)
 }
 
 func (s *productionOrderService) DeleteOrderByID(id int) error {

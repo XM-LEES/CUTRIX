@@ -16,11 +16,16 @@ export const styleService = {
 
 // (新) 生产订单服务
 export const productionOrderService = {
-  getOrders: () => apiService.get<ProductionOrder[]>('/production-orders'),
+  // Update getOrders to accept an optional query
+  getOrders: (query?: string) => {
+    const endpoint = query ? `/production-orders?style_number=${query}` : '/production-orders';
+    return apiService.get<ProductionOrder[]>(endpoint);
+  },
   getOrder: (id: number) => apiService.get<ProductionOrder>(`/production-orders/${id}`),
   createOrder: (data: CreateProductionOrderRequest) => apiService.post<ProductionOrder>('/production-orders', data),
-  deleteOrder: (id: number) => apiService.delete(`/production-orders/${id}`), 
+  deleteOrder: (id: number) => apiService.delete(`/production-orders/${id}`),
 };
+
 // (新) 生产计划服务
 export const productionPlanService = {
   getPlans: () => apiService.get<ProductionPlan[]>('/production-plans'),

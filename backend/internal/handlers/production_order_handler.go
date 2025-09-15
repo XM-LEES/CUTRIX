@@ -63,7 +63,9 @@ func (h *ProductionOrderHandler) GetOrder(c *gin.Context) {
 }
 
 func (h *ProductionOrderHandler) GetOrders(c *gin.Context) {
-	orders, err := h.orderService.GetAllOrders()
+	styleNumberQuery := c.Query("style_number")
+
+	orders, err := h.orderService.GetAllOrders(styleNumberQuery)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Success: false, Message: "Failed to retrieve orders", Error: err.Error(),

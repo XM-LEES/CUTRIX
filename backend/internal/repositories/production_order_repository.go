@@ -10,10 +10,9 @@ import (
 )
 
 type ProductionOrderRepository interface {
-	// --- 修改函数签名 ---
 	CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error)
 	GetOrderWithItems(orderID int) (*models.ProductionOrder, error)
-	GetAllOrders() ([]models.ProductionOrder, error)
+	GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error) // Signature updated
 	CountOrdersByStyleAndDate(styleID int, date string) (int, error)
 	DeleteOrder(tx *sqlx.Tx, orderID int) error
 }
@@ -26,9 +25,9 @@ func NewProductionOrderRepository(db *sqlx.DB) ProductionOrderRepository {
 	return &productionOrderRepository{db: db}
 }
 
-// CreateOrder 在一个事务中创建订单及其所有项目
+// CreateOrder and GetOrderWithItems remain the same...
+
 func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error) {
-	// 1. 插入主订单表
 	orderQuery := `INSERT INTO Production_Orders (order_number, style_id) VALUES ($1, $2) RETURNING order_id, order_number, style_id, created_at`
 	var order models.ProductionOrder
 	err := tx.QueryRowx(orderQuery, orderNumber, styleID).StructScan(&order)
@@ -36,7 +35,6 @@ func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, orderNumber string,
 		return nil, fmt.Errorf("failed to insert production order: %w", err)
 	}
 
-	// 2. 批量插入订单项目
 	itemQuery := `INSERT INTO Order_Items (order_id, color, size, quantity) VALUES ($1, $2, $3, $4)`
 	stmt, err := tx.Preparex(itemQuery)
 	if err != nil {
@@ -54,7 +52,6 @@ func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, orderNumber string,
 	return &order, nil
 }
 
-// GetOrderWithItems 获取一个订单及其所有项目
 func (r *productionOrderRepository) GetOrderWithItems(orderID int) (*models.ProductionOrder, error) {
 	var order models.ProductionOrder
 	orderQuery := `SELECT order_id, order_number, style_id, created_at FROM Production_Orders WHERE order_id = $1`
@@ -77,22 +74,34 @@ func (r *productionOrderRepository) GetOrderWithItems(orderID int) (*models.Prod
 	return &order, nil
 }
 
-// GetAllOrders 获取所有订单 (不包含项目详情，用于列表页)
-func (r *productionOrderRepository) GetAllOrders() ([]models.ProductionOrder, error) {
+// GetAllOrders now accepts a search query
+func (r *productionOrderRepository) GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error) {
 	var orders []models.ProductionOrder
-	query := `SELECT po.order_id, po.order_number, po.style_id, po.created_at
-	          FROM Production_Orders po ORDER BY po.created_at DESC`
-	err := r.db.Select(&orders, query)
+
+	baseQuery := `
+        SELECT po.order_id, po.order_number, po.style_id, po.created_at
+        FROM Production_Orders po
+        LEFT JOIN Styles s ON po.style_id = s.style_id
+    `
+	args := []interface{}{}
+
+	if styleNumberQuery != "" {
+		baseQuery += " WHERE s.style_number ILIKE $1" // ILIKE for case-insensitive search
+		args = append(args, "%"+styleNumberQuery+"%")
+	}
+
+	baseQuery += " ORDER BY po.created_at DESC"
+
+	err := r.db.Select(&orders, baseQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all orders: %w", err)
 	}
 	return orders, nil
 }
 
-// CountOrdersByStyleAndDate 查询特定款号在某天的订单数量
+// CountOrdersByStyleAndDate and DeleteOrder remain the same...
 func (r *productionOrderRepository) CountOrdersByStyleAndDate(styleID int, date string) (int, error) {
 	var count int
-	// 解析日期字符串
 	startTime, err := time.Parse("20060102", date)
 	if err != nil {
 		return 0, err
@@ -107,9 +116,7 @@ func (r *productionOrderRepository) CountOrdersByStyleAndDate(styleID int, date 
 	return count, nil
 }
 
-// DeleteOrder 删除一个订单
 func (r *productionOrderRepository) DeleteOrder(tx *sqlx.Tx, orderID int) error {
-	// 因为数据库设置了 ON DELETE CASCADE，所以删除主订单时，关联的 order_items 会被自动删除
 	query := `DELETE FROM Production_Orders WHERE order_id = $1`
 	result, err := tx.Exec(query, orderID)
 	if err != nil {

@@ -4,7 +4,7 @@ import { CreateProductionOrderRequest } from '../types';
 import { productionOrderService } from '../services';
 
 type OrderActions = {
-  fetchOrders: () => Promise<void>;
+  fetchOrders: (query?: string) => Promise<void>;
   fetchOrder: (id: number) => Promise<void>;
   createOrder: (data: CreateProductionOrderRequest) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
@@ -16,10 +16,10 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
   loading: false,
   error: null,
 
-  fetchOrders: async () => {
+  fetchOrders: async (query?: string) => { // <-- Updated
     set({ loading: true, error: null });
     try {
-      const orders = await productionOrderService.getOrders();
+      const orders = await productionOrderService.getOrders(query); // <-- Pass query
       set({ orders: orders || [], loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
