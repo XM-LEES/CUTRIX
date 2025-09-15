@@ -98,9 +98,9 @@ func (s *workerService) Delete(id int) error {
 		return err // worker not found
 	}
 
-	// 禁止删除 admin
-	if worker.Role == "admin" {
-		return &ValidationError{Message: "不能删除管理员账户"}
+	// 禁止删除 admin 或 manager
+	if worker.Role == "admin" || worker.Role == "manager" {
+		return &ValidationError{Message: "不能删除管理员或车间主任账户"}
 	}
 
 	return s.workerRepo.Delete(id)

@@ -112,7 +112,7 @@ const Workers: React.FC = () => {
             title: '操作',
             key: 'action',
             width: 240,
-            render: (_: any, record: Worker) => {
+render: (_: any, record: Worker) => {
                 let canEdit = true;
                 if (currentUser?.role === 'manager' && record.role === 'admin') {
                     canEdit = false;
@@ -121,13 +121,16 @@ const Workers: React.FC = () => {
                 if (currentUser?.role === 'manager' && record.role === 'admin') {
                     canChangePassword = false;
                 }
+                const isSelf = currentUser?.worker_id === record.worker_id;
 
                 return (
                     <Space size="small">
                         <Button type="primary" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} disabled={!canEdit}>编辑</Button>
                         <Button icon={<KeyOutlined />} onClick={() => handleOpenPasswordModal(record)} disabled={!canChangePassword}>改密</Button>
-                        <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.worker_id)} disabled={record.role === 'admin'}>
-                            <Button type="primary" danger icon={<DeleteOutlined />} disabled={record.role === 'admin'}>删除</Button>
+                        <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.worker_id)} disabled={record.role === 'admin' || (record.role === 'manager' && isSelf)}>
+                            <Button type="primary" danger icon={<DeleteOutlined />} disabled={record.role === 'admin' || (record.role === 'manager' && isSelf)}>
+                                删除
+                            </Button>
                         </Popconfirm>
                     </Space>
                 );

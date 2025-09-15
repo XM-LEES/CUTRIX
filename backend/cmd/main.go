@@ -47,7 +47,7 @@ func main() {
 	fabricRepo := repositories.NewFabricRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 	workerRepo := repositories.NewWorkerRepository(db)
-	orderService := services.NewProductionOrderService(db, orderRepo, styleRepo)
+	orderRepo := repositories.NewProductionOrderRepository(db)
 	planRepo := repositories.NewProductionPlanRepository(db)
 
 	// ======== 统一初始化所有服务 (Services) ========
@@ -56,10 +56,8 @@ func main() {
 	taskService := services.NewTaskService(taskRepo, styleRepo)
 	fabricService := services.NewFabricService(fabricRepo, styleRepo)
 	logService := services.NewLogService(logRepo)
-	orderService := services.NewProductionOrderService(db, orderRepo)
+	orderService := services.NewProductionOrderService(db, orderRepo, styleRepo)
 	planService := services.NewProductionPlanService(db, planRepo)
-
-	// 修改：只初始化一个统一的 workerService
 	workerService := services.NewWorkerService(workerRepo)
 
 	// ======== 统一初始化所有处理器 (Handlers) ========
@@ -70,8 +68,6 @@ func main() {
 	logHandler := handlers.NewLogHandler(logService)
 	orderHandler := handlers.NewProductionOrderHandler(orderService)
 	planHandler := handlers.NewProductionPlanHandler(planService)
-
-	// 修改：将统一的 workerService 传入 workerHandler
 	workerHandler := handlers.NewWorkerHandler(workerService)
 
 	// ... (API 路由组部分不变)
