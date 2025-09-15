@@ -4,6 +4,7 @@ import (
 	"cutrix-backend/internal/models"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -13,6 +14,8 @@ type ProductionOrderRepository interface {
 	CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error)
 	GetOrderWithItems(orderID int) (*models.ProductionOrder, error)
 	GetAllOrders() ([]models.ProductionOrder, error)
+	CountOrdersByStyleAndDate(styleID int, date string) (int, error)
+	DeleteOrder(tx *sqlx.Tx, orderID int) error
 }
 
 type productionOrderRepository struct {
@@ -84,4 +87,40 @@ func (r *productionOrderRepository) GetAllOrders() ([]models.ProductionOrder, er
 		return nil, fmt.Errorf("failed to get all orders: %w", err)
 	}
 	return orders, nil
+}
+
+// CountOrdersByStyleAndDate 查询特定款号在某天的订单数量
+func (r *productionOrderRepository) CountOrdersByStyleAndDate(styleID int, date string) (int, error) {
+	var count int
+	// 解析日期字符串
+	startTime, err := time.Parse("20060102", date)
+	if err != nil {
+		return 0, err
+	}
+	endTime := startTime.Add(24 * time.Hour)
+
+	query := `SELECT COUNT(*) FROM Production_Orders WHERE style_id = $1 AND created_at >= $2 AND created_at < $3`
+	err = r.db.Get(&count, query, styleID, startTime, endTime)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count orders: %w", err)
+	}
+	return count, nil
+}
+
+// DeleteOrder 删除一个订单
+func (r *productionOrderRepository) DeleteOrder(tx *sqlx.Tx, orderID int) error {
+	// 因为数据库设置了 ON DELETE CASCADE，所以删除主订单时，关联的 order_items 会被自动删除
+	query := `DELETE FROM Production_Orders WHERE order_id = $1`
+	result, err := tx.Exec(query, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to delete order: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("order not found or already deleted")
+	}
+	return nil
 }

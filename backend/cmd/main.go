@@ -93,6 +93,7 @@ func main() {
 			orders.POST("", orderHandler.CreateOrder)
 			orders.GET("", orderHandler.GetOrders)
 			orders.GET("/:id", orderHandler.GetOrder)
+			orders.DELETE("/:id", orderHandler.DeleteOrder)
 		}
 
 		// 生产计划管理 (新)

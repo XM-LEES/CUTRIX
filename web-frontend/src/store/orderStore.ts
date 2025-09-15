@@ -7,6 +7,7 @@ type OrderActions = {
   fetchOrders: () => Promise<void>;
   fetchOrder: (id: number) => Promise<void>;
   createOrder: (data: CreateProductionOrderRequest) => Promise<void>;
+  deleteOrder: (id: number) => Promise<void>;
 };
 
 export const useOrderStore = create<OrderState & OrderActions>((set) => ({
@@ -47,6 +48,21 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         const errorMessage = (error as Error).message;
         set({ error: errorMessage, loading: false });
         throw new Error(errorMessage);
+    }
+  },
+    // v-- 新增 deleteOrder action --v
+  deleteOrder: async (id: number) => {
+    set({ loading: true, error: null });
+    try {
+      await productionOrderService.deleteOrder(id);
+      set((state) => ({
+        orders: state.orders.filter((order) => order.order_id !== id),
+        loading: false,
+      }));
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, loading: false });
+      throw new Error(errorMessage);
     }
   },
 }));

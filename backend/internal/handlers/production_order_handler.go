@@ -75,3 +75,26 @@ func (h *ProductionOrderHandler) GetOrders(c *gin.Context) {
 		Success: true, Message: "Orders retrieved successfully", Data: orders,
 	})
 }
+
+func (h *ProductionOrderHandler) DeleteOrder(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false, Message: "Invalid order ID", Error: "order ID must be a number",
+		})
+		return
+	}
+
+	err = h.orderService.DeleteOrderByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Success: false, Message: "Failed to delete order", Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true, Message: "Order deleted successfully",
+	})
+}

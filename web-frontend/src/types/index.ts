@@ -149,7 +149,6 @@ export interface UpdateWorkerRequest {
 
 // (新) 订单请求
 export interface CreateProductionOrderRequest {
-    order_number: string;
     style_number: string;
     items: Array<{
         color: string;
@@ -157,7 +156,6 @@ export interface CreateProductionOrderRequest {
         quantity: number;
     }>;
 }
-
 // (新) 计划请求
 export interface CreateProductionPlanRequest {
     plan_name: string;

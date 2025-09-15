@@ -19,8 +19,8 @@ export const productionOrderService = {
   getOrders: () => apiService.get<ProductionOrder[]>('/production-orders'),
   getOrder: (id: number) => apiService.get<ProductionOrder>(`/production-orders/${id}`),
   createOrder: (data: CreateProductionOrderRequest) => apiService.post<ProductionOrder>('/production-orders', data),
+  deleteOrder: (id: number) => apiService.delete(`/production-orders/${id}`), 
 };
-
 // (新) 生产计划服务
 export const productionPlanService = {
   getPlans: () => apiService.get<ProductionPlan[]>('/production-plans'),

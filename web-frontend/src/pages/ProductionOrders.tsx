@@ -1,42 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Typography,
-  Button,
-  Table,
-  Modal,
-  Form,
-  Input,
-  message,
-  Space,
-  Card,
-  Row,
-  Col,
-  InputNumber,
-  Popconfirm,
+  Typography, Button, Table, Modal, Form, Input, message, Space, Card,
+  Row, Col, InputNumber, Popconfirm, Divider, Descriptions
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { useOrderStore } from '../store/orderStore';
 import { useStyleStore } from '../store/styleStore';
-import type { ProductionOrder } from '../types';
+import type { ProductionOrder, CreateProductionOrderRequest } from '../types';
 import dayjs from 'dayjs';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+
+// 常规尺码列表
+const REGULAR_SIZES = ['90', '100', '110', '120', '130', '140', '150', '160'];
 
 const ProductionOrders: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ProductionOrder | null>(null);
   const [form] = Form.useForm();
 
-  // 从 Zustand store 获取数据和方法
-  const { orders, loading, fetchOrders, createOrder } = useOrderStore();
+  const { orders, currentOrder, loading, fetchOrders, createOrder, fetchOrder, deleteOrder } = useOrderStore();
   const { styles, fetchStyles } = useStyleStore();
 
-  // 组件加载时获取订单和款号数据
   useEffect(() => {
     fetchOrders();
     fetchStyles();
   }, [fetchOrders, fetchStyles]);
 
-  // 将款号数组转换为 map，方便快速查找款号名称
   const styleMap = React.useMemo(() => {
     return styles.reduce((map, style) => {
       map[style.style_id] = style.style_number;
@@ -44,162 +35,183 @@ const ProductionOrders: React.FC = () => {
     }, {} as Record<number, string>);
   }, [styles]);
 
-
   const handleCreate = async (values: any) => {
+    const matrixItems = (values.matrix || [])
+      .flatMap((row: { color: string; sizes: Record<string, number> }) => {
+        if (!row || !row.color) return [];
+        return Object.entries(row.sizes || {})
+          .filter(([, quantity]) => quantity && quantity > 0)
+          .map(([size, quantity]) => ({ color: row.color, size, quantity }));
+      });
+    const specialItems = (values.special_items || []).filter(
+      (item: any) => item && item.color && item.size && item.quantity > 0
+    );
+    const allItems = [...matrixItems, ...specialItems];
+    if (allItems.length === 0) {
+      message.error('请至少输入一个有效的订单明细项');
+      return;
+    }
+    const finalValues: CreateProductionOrderRequest = {
+      style_number: values.style_number,
+      items: allItems,
+    };
     try {
-      // 确保 items 存在且不为空
-      if (!values.items || values.items.length === 0) {
-        message.error('请至少添加一个订单明细项');
-        return;
-      }
-      await createOrder(values);
+      await createOrder(finalValues);
       setIsModalOpen(false);
       form.resetFields();
       message.success('生产订单创建成功');
     } catch (error) {
-      message.error((error as Error).message || '创建失败，请检查订单号是否重复');
+      message.error((error as Error).message || '创建失败，请检查数据');
+    }
+  };
+  
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteOrder(id);
+      message.success('订单删除成功');
+    } catch (error) {
+      message.error((error as Error).message || '删除失败');
     }
   };
 
-  const handleModalCancel = () => {
-    setIsModalOpen(false);
-    form.resetFields();
+  const handleViewDetails = async (record: ProductionOrder) => {
+    setSelectedOrder(record);
+    setIsDetailModalOpen(true);
+    await fetchOrder(record.order_id);
   };
 
-  const columns = [
+  const mainColumns = [
+    { title: '订单号', dataIndex: 'order_number', key: 'order_number', width: 220 },
+    { title: '款号', dataIndex: 'style_id', key: 'style_id', render: (styleId: number) => styleMap[styleId] || '未知款号' },
+    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm') },
     {
-      title: '订单号',
-      dataIndex: 'order_number',
-      key: 'order_number',
-    },
-    {
-      title: '款号',
-      dataIndex: 'style_id',
-      key: 'style_id',
-      render: (styleId: number) => styleMap[styleId] || '未知款号',
-    },
-    {
-        title: '明细项数量',
-        dataIndex: 'items',
-        key: 'items_count',
-        render: (items: any[]) => items?.length || 0,
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: any, _record: ProductionOrder) => (
-        <Space size="middle">
-          <Button icon={<EyeOutlined />} size="small">
+      title: '操作', key: 'action',
+      render: (_: any, record: ProductionOrder) => (
+        <Space size="small">
+          <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetails(record)}>
             查看详情
           </Button>
+          <Popconfirm title="确定删除此订单？" onConfirm={() => handleDelete(record.order_id)}>
+            <Button icon={<DeleteOutlined />} size="small" danger />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
+  const detailColumns = [
+    { title: '颜色', dataIndex: 'color', key: 'color' },
+    { title: '尺码', dataIndex: 'size', key: 'size' },
+    { title: '数量', dataIndex: 'quantity', key: 'quantity' },
+  ];
+
+  const totalQuantity = currentOrder?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+
   return (
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-        <Col>
-          <Title level={2}>生产订单管理</Title>
-        </Col>
-        <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setIsModalOpen(true)}
-          >
-            录入新订单
-          </Button>
-        </Col>
+        <Col><Title level={2}>生产订单管理</Title></Col>
+        <Col><Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>录入新订单</Button></Col>
       </Row>
-
       <Card>
-        <Table
-          columns={columns}
-          dataSource={orders}
-          rowKey="order_id"
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-        />
+        <Table columns={mainColumns} dataSource={orders} rowKey="order_id" loading={loading} pagination={{ pageSize: 10 }} />
       </Card>
-
+      
       <Modal
         title="录入新生产订单"
         open={isModalOpen}
         onOk={form.submit}
-        onCancel={handleModalCancel}
+        onCancel={() => { setIsModalOpen(false); form.resetFields(); }}
         confirmLoading={loading}
-        width={800}
+        width={1000}
         destroyOnClose
       >
-        <Form form={form} onFinish={handleCreate} layout="vertical">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="order_number"
-                label="订单号"
-                rules={[{ required: true, message: '请输入订单号' }]}
-              >
-                <Input placeholder="例如: PO-20250821-01" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="style_number" // <-- 修改 name
-                label="款号"
-                rules={[{ required: true, message: '请输入款号' }]}
-              >
-                <Input placeholder="输入款号，如果不存在将自动创建" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Title level={5}>订单明细</Title>
-          <Form.List name="items">
-            {(fields, { add, remove }) => (
-              <>
-                <Card>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Row key={key} gutter={16} align="middle" style={{ marginBottom: 8 }}>
-                      <Col span={7}>
-                        <Form.Item {...restField} name={[name, 'color']} rules={[{ required: true, message: '请输入颜色' }]}>
-                          <Input placeholder="颜色" />
-                        </Form.Item>
-                      </Col>
-                      <Col span={7}>
-                        <Form.Item {...restField} name={[name, 'size']} rules={[{ required: true, message: '请输入尺码' }]}>
-                          <Input placeholder="尺码" />
-                        </Form.Item>
-                      </Col>
-                      <Col span={7}>
-                        <Form.Item {...restField} name={[name, 'quantity']} rules={[{ required: true, message: '请输入数量' }]}>
-                          <InputNumber placeholder="数量" min={1} style={{ width: '100%' }} />
-                        </Form.Item>
-                      </Col>
-                      <Col span={3}>
-                        <Popconfirm title="确认删除?" onConfirm={() => remove(name)}>
-                          <Button type="primary" danger icon={<DeleteOutlined />} />
-                        </Popconfirm>
-                      </Col>
+        <Form form={form} onFinish={handleCreate} layout="vertical" initialValues={{ matrix: [{}] }}>
+            <Form.Item name="style_number" label="款号" rules={[{ required: true, message: '请输入款号' }]}>
+                <Input placeholder="输入款号 (若不存在，系统将自动新增此款号)" />
+            </Form.Item>
+            
+            <Divider orientation="left">常规尺码批量录入</Divider>
+            <Form.List name="matrix">
+                {(fields, { add, remove }) => (
+                <>
+                    <Row gutter={8} style={{ marginBottom: 8, color: 'gray' }}>
+                    <Col span={4}><Text strong>颜色</Text></Col>
+                    {REGULAR_SIZES.map(size => (
+                        <Col span={2} key={size} style={{ textAlign: 'center' }}><Text strong>{size}</Text></Col>
+                    ))}
                     </Row>
-                  ))}
-                </Card>
-                <Form.Item style={{marginTop: "10px"}}>
-                  <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                    添加明细项
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
+                    {fields.map(({ key, name, ...restField }) => (
+                    <Row key={key} gutter={8} align="middle">
+                        <Col span={4}>
+                        <Form.Item {...restField} name={[name, 'color']} rules={[{ required: true, message: '输入颜色' }]}>
+                            <Input placeholder="颜色" />
+                        </Form.Item>
+                        </Col>
+                        {REGULAR_SIZES.map(size => (
+                        <Col span={2} key={size}>
+                            <Form.Item {...restField} name={[name, 'sizes', size]}>
+                            <InputNumber min={0} style={{ width: '100%' }} />
+                            </Form.Item>
+                        </Col>
+                        ))}
+                        <Col span={2}>
+                        {fields.length > 1 && (
+                            <Popconfirm title="确认删除此行?" onConfirm={() => remove(name)}>
+                            <Button type="text" danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
+                        )}
+                        </Col>
+                    </Row>
+                    ))}
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加颜色行</Button>
+                </>
+                )}
+            </Form.List>
+
+            <Divider orientation="left" style={{marginTop: 24}}>添加特殊尺码 (可选)</Divider>
+            <Form.List name="special_items">
+                {(fields, { add, remove }) => (
+                <>
+                    {fields.map(({ key, name, ...restField }) => (
+                    <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                        <Form.Item {...restField} name={[name, 'color']} rules={[{ required: true, message: '颜色' }]}><Input placeholder="颜色" /></Form.Item>
+                        <Form.Item {...restField} name={[name, 'size']} rules={[{ required: true, message: '尺码' }]}><Input placeholder="特殊尺码" /></Form.Item>
+                        <Form.Item {...restField} name={[name, 'quantity']} rules={[{ required: true, message: '数量' }]}><InputNumber min={1} placeholder="数量" /></Form.Item>
+                        <DeleteOutlined onClick={() => remove(name)} />
+                    </Space>
+                    ))}
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加特殊尺码明细</Button>
+                </>
+                )}
+            </Form.List>
         </Form>
+      </Modal>
+
+      <Modal
+        title={`订单详情: ${selectedOrder?.order_number || ''}`}
+        open={isDetailModalOpen}
+        onCancel={() => setIsDetailModalOpen(false)}
+        footer={null}
+        width={800}
+      >
+        {loading && !currentOrder ? <Text>加载中...</Text> : (
+            <>
+                <Descriptions bordered column={2} style={{marginBottom: 24}}>
+                    <Descriptions.Item label="订单号">{currentOrder?.order_number}</Descriptions.Item>
+                    <Descriptions.Item label="款号">{styleMap[currentOrder?.style_id || 0]}</Descriptions.Item>
+                    <Descriptions.Item label="创建时间">{dayjs(currentOrder?.created_at).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+                    <Descriptions.Item label="总件数">{totalQuantity}</Descriptions.Item>
+                </Descriptions>
+                <Table 
+                    columns={detailColumns}
+                    dataSource={currentOrder?.items}
+                    rowKey="item_id"
+                    pagination={false}
+                    size="small"
+                />
+            </>
+        )}
       </Modal>
     </div>
   );
