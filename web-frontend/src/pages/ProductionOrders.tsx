@@ -61,6 +61,7 @@ const ProductionOrders: React.FC = () => {
       setIsModalOpen(false);
       form.resetFields();
       message.success('生产订单创建成功');
+      fetchStyles();
     } catch (error) {
       message.error((error as Error).message || '创建失败，请检查数据');
     }
