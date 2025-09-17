@@ -24,14 +24,14 @@ const Dashboard: React.FC = () => {
     fetchWorkers();
   }, [fetchStyles, fetchPlans, fetchWorkers]);
 
-  // 关键修改：在处理 plans 数组前，先判断它是否为数组
+  // 在处理 plans 数组前，先判断它是否为数组
   const pendingTasks = Array.isArray(plans)
     ? plans
         .flatMap(plan => plan.layouts ?? [])
         .flatMap(layout => layout.tasks ?? [])
         .filter((task: ProductionTask) => task.planned_layers > task.completed_layers)
         .length
-    : 0; // 如果 plans 不是数组，则默认为 0
+    : 0; 
 
   const isLoading = stylesLoading || plansLoading || workersLoading;
 
