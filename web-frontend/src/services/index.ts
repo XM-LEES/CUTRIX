@@ -4,29 +4,17 @@ import {
   ProductionTask, 
   Worker, CreateWorkerRequest, UpdateWorkerRequest,
   ProductionOrder, CreateProductionOrderRequest,
-  ProductionPlan, CreateProductionPlanRequest
+  ProductionPlan, CreateProductionPlanRequest,
+  WorkerTaskGroup,
+  ProductionLog, CreateProductionLogRequest
 } from '../types';
-
-// ... (其他服务不变)
-
-// 生产计划服务
-export const productionPlanService = {
-  getPlans: (query?: string) => {
-    const endpoint = query ? `/production-plans?q=${query}` : '/production-plans';
-    return apiService.get<ProductionPlan[]>(endpoint);
-  },
-  getPlan: (id: number) => apiService.get<ProductionPlan>(`/production-plans/${id}`),
-  createPlan: (data: CreateProductionPlanRequest) => apiService.post<ProductionPlan>('/production-plans', data),
-  updatePlan: (id: number, data: CreateProductionPlanRequest) => apiService.put<ProductionPlan>(`/production-plans/${id}`, data), // <-- 新增
-  getPlanByOrderId: (orderId: number) => apiService.get<ProductionPlan>(`/production-plans/by-order/${orderId}`),
-  deletePlan: (id: number) => apiService.delete(`/production-plans/${id}`),
-};
 
 export const styleService = {
   getStyles: () => apiService.get<Style[]>('/styles'),
   getStyle: (id: number) => apiService.get<Style>(`/styles/${id}`),
   createStyle: (data: CreateStyleRequest) => apiService.post<Style>('/styles', data),
 };
+
 export const productionOrderService = {
   getOrders: (query?: string) => {
     const endpoint = query ? `/production-orders?style_number=${query}` : '/production-orders';
@@ -37,6 +25,19 @@ export const productionOrderService = {
   createOrder: (data: CreateProductionOrderRequest) => apiService.post<ProductionOrder>('/production-orders', data),
   deleteOrder: (id: number) => apiService.delete(`/production-orders/${id}`),
 };
+
+export const productionPlanService = {
+  getPlans: (query?: string) => {
+    const endpoint = query ? `/production-plans?q=${query}` : '/production-plans';
+    return apiService.get<ProductionPlan[]>(endpoint);
+  },
+  getPlan: (id: number) => apiService.get<ProductionPlan>(`/production-plans/${id}`),
+  createPlan: (data: CreateProductionPlanRequest) => apiService.post<ProductionPlan>('/production-plans', data),
+  updatePlan: (id: number, data: CreateProductionPlanRequest) => apiService.put<ProductionPlan>(`/production-plans/${id}`, data),
+  getPlanByOrderId: (orderId: number) => apiService.get<ProductionPlan>(`/production-plans/by-order/${orderId}`),
+  deletePlan: (id: number) => apiService.delete(`/production-plans/${id}`),
+};
+
 export const workerService = {
     getWorkers: () => apiService.get<Worker[]>('/workers'),
     getWorker: (id: number) => apiService.get<Worker>(`/workers/${id}`),
@@ -45,5 +46,12 @@ export const workerService = {
     deleteWorker: (id: number) => apiService.delete(`/workers/${id}`),
     getWorkerTasks: (workerId: number) => apiService.get<ProductionTask[]>(`/workers/${workerId}/tasks`),
     updateWorkerPassword: (id: number, data: { password: string }) => apiService.put(`/workers/${id}/password`, data),
+    getWorkerTaskGroups: (workerId: number) => apiService.get<WorkerTaskGroup[]>(`/workers/${workerId}/task-groups`),
 };
+
+// --- 添加 logService ---
+export const logService = {
+  createLog: (data: CreateProductionLogRequest) => apiService.post<ProductionLog>('/production-logs', data),
+};
+
 export { authService } from './authService';

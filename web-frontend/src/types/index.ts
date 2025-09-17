@@ -6,7 +6,6 @@ export interface APIResponse<T = any> {
   error?: string;
 }
 
-// ApiConfig 接口
 export interface ApiConfig {
   baseURL: string;
   timeout: number;
@@ -31,8 +30,7 @@ export interface AuthState extends AppState {
   user: User | null;
 }
 
-
-// --- 核心实体模型 (部分更新) ---
+// --- 核心实体模型 ---
 export interface AppState {
   loading: boolean;
   error: string | null;
@@ -72,8 +70,7 @@ export interface ProductionLog {
 }
 
 
-// --- 订单、计划、任务模型 (新/重构) ---
-
+// --- 订单、计划、任务模型 ---
 export interface ProductionOrder {
   order_id: number;
   order_number: string;
@@ -97,6 +94,9 @@ export interface ProductionPlan {
   linked_order_id?: number;
   created_at: string;
   layouts?: CuttingLayout[];
+  // 前端计算字段
+  overall_progress?: number;
+  style_number?: string;
 }
 
 export interface CuttingLayout {
@@ -119,14 +119,13 @@ export interface ProductionTask {
   task_id: number;
   style_id: number;
   layout_id?: number;
-  layout_name: string; // 原 marker_id
+  layout_name: string;
   color: string;
   planned_layers: number;
   completed_layers: number;
 }
 
 // --- API 请求模型 ---
-
 export interface CreateStyleRequest {
   style_number: string;
 }
@@ -147,7 +146,6 @@ export interface UpdateWorkerRequest {
   is_active: boolean;
 }
 
-// (新) 订单请求
 export interface CreateProductionOrderRequest {
     style_number: string;
     items: Array<{
@@ -157,7 +155,6 @@ export interface CreateProductionOrderRequest {
     }>;
 }
 
-// (新) 计划请求
 export interface CreateProductionPlanRequest {
     plan_name: string;
     style_id: number;
@@ -176,9 +173,28 @@ export interface CreateProductionPlanRequest {
     }>;
 }
 
+// --- 修正点 1：添加缺失的 CreateProductionLogRequest 类型 ---
+export interface CreateProductionLogRequest {
+    task_id?: number;
+    roll_id?: string;
+    parent_log_id?: number;
+    worker_id: number;
+    process_name: '放料' | '拉布' | '裁剪' | '打包';
+    layers_completed?: number;
+}
+
+// --- 为员工工作台定制的视图模型 ---
+export interface WorkerTaskGroup {
+  plan_id: number;
+  plan_name: string;
+  style_number: string;
+  total_planned: number;
+  total_completed: number;
+  tasks: ProductionTask[];
+}
+
 
 // --- Zustand State 类型 ---
-
 export interface StyleState extends AppState {
   styles: Style[];
   currentStyle: Style | null;
@@ -191,28 +207,15 @@ export interface WorkerState extends AppState {
 
 export interface TaskState extends AppState {
   tasks: ProductionTask[];
-  // ...
 }
 
-// (新)
 export interface OrderState extends AppState {
     orders: ProductionOrder[];
-    unplannedOrders?: ProductionOrder[]; // <-- 修复：新增属性
+    unplannedOrders?: ProductionOrder[];
     currentOrder: ProductionOrder | null;
 }
 
-// (新)
 export interface PlanState extends AppState {
     plans: ProductionPlan[];
     currentPlan: ProductionPlan | null;
-}
-
-// --- 为员工工作台定制的视图模型 ---
-export interface WorkerTaskGroup {
-  plan_id: number;
-  plan_name: string;
-  style_number: string;
-  total_planned: number;
-  total_completed: number;
-  tasks: ProductionTask[];
 }

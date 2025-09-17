@@ -1,35 +1,37 @@
 import { FC, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Layout, Button, Typography } from 'antd';
+import { Layout } from 'antd';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/Dashboard'; // 这是管理员的
 import Workers from './pages/Workers';
 import LoginPage from './pages/Login';
 import { useAuthStore } from './store/authStore';
-import { LogoutOutlined } from '@ant-design/icons';
 import ProductionOrders from './pages/ProductionOrders';
 import ProductionPlanning from './pages/ProductionPlanning';
 import ProductionPlanningCreate from './pages/ProductionPlanningCreate';
 import ProductionPlanningEdit from './pages/ProductionPlanningEdit';
 import ProductionMonitoring from './pages/ProductionMonitoring';
-import ProductionPlanDetail from './pages/ProductionPlanDetail'; // 1. 引入新页面
+import ProductionPlanDetail from './pages/ProductionPlanDetail';
+// 引入员工端新页面
+import WorkerDashboard from './pages/WorkerDashboard'; // 这是工人的
+import TaskOperation from './pages/TaskOperation';
 
-const { Title } = Typography;
 const { Content } = Layout;
 
+// 管理员/主任布局
 const AdminLayout: FC = () => (
   <Layout style={{ minHeight: '100vh' }}>
     <Sidebar />
     <Layout>
       <Content style={{ padding: '24px', background: '#f0f2f5' }}>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />} /> {/* 管理员首页 */}
           <Route path="/orders" element={<ProductionOrders />} />
           <Route path="/planning" element={<ProductionPlanning />} />
           <Route path="/planning/new" element={<ProductionPlanningCreate />} />
           <Route path="/planning/edit/:planId" element={<ProductionPlanningEdit />} />
           <Route path="/monitoring" element={<ProductionMonitoring />} />
-          <Route path="/monitoring/:planId" element={<ProductionPlanDetail />} /> {/* <-- 2. 添加新路由 */}
+          <Route path="/monitoring/:planId" element={<ProductionPlanDetail />} />
           <Route path="/workers" element={<Workers />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -38,19 +40,13 @@ const AdminLayout: FC = () => (
   </Layout>
 );
 
+// 工人布局
 const WorkerLayout: FC = () => (
-  <div style={{ padding: 40 }}>
-      <Title level={2}>员工操作界面</Title>
-      <p>这里将是员工的工作台。</p>
-      <Button 
-        type="primary" 
-        danger 
-        icon={<LogoutOutlined />}
-        onClick={() => useAuthStore.getState().logout()}
-      >
-        退出登录
-      </Button>
-  </div>
+    <Routes>
+        <Route path="/" element={<WorkerDashboard />} /> {/* 工人首页 */}
+        <Route path="/task/:planId" element={<TaskOperation />} />
+        <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
 );
 
 const App: FC = () => {
@@ -73,7 +69,10 @@ const App: FC = () => {
 
   return (
     <Router>
-      {user?.role === 'admin' || user?.role === 'manager' ? <AdminLayout /> : <WorkerLayout />}
+      {user?.role === 'admin' || user?.role === 'manager' 
+        ? <AdminLayout /> 
+        : <WorkerLayout /> // 根据角色渲染不同布局
+      }
     </Router>
   );
 };

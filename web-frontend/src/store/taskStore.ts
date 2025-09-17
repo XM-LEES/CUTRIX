@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import { productionPlanService } from '../services';
+import { productionPlanService, workerService, logService } from '../services'; // 引入 logService
 import type { ProductionPlan, AppState, CreateProductionLogRequest, WorkerTaskGroup } from '../types';
-import { workerService } from '../services';
 
 interface TaskState extends AppState {
   taskGroups: WorkerTaskGroup[];
@@ -38,22 +37,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
   
   submitLog: async (log) => {
-    set({ loading: true, error: null });
+    // 提交日志时不应全局 loading，而是局部 loading
     try {
-      // 假设 logService 在 services/index.ts 中定义并导出
-      // await logService.createLog(log);
-      console.log("Submitting log:", log); // 临时替代
+      await logService.createLog(log);
       
+      // 成功后，刷新当前计划的数据
       const currentPlanId = get().currentPlan?.plan_id;
       if (currentPlanId) {
-        // 成功后，刷新看板和当前计划的数据
-        const workerId = log.worker_id; // 从 log 中获取 workerId
-        await get().fetchWorkerTaskGroups(workerId);
-        await get().fetchPlanForTask(currentPlanId);
+        // 静默刷新，不设置全局 loading
+        const plan = await productionPlanService.getPlan(currentPlanId);
+        set({ currentPlan: plan });
       }
     } catch (error) {
        const errorMessage = (error as Error).message;
-       set({ error: errorMessage, loading: false });
+       // 这里不设置全局 error，让组件自己处理
        throw new Error(errorMessage);
     }
   }
