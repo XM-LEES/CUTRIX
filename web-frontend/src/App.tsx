@@ -12,8 +12,9 @@ import ProductionPlanning from './pages/ProductionPlanning';
 import ProductionPlanningCreate from './pages/ProductionPlanningCreate';
 import ProductionPlanningEdit from './pages/ProductionPlanningEdit';
 import ProductionMonitoring from './pages/ProductionMonitoring';
-const { Title } = Typography;
+import ProductionPlanDetail from './pages/ProductionPlanDetail'; // 1. 引入新页面
 
+const { Title } = Typography;
 const { Content } = Layout;
 
 const AdminLayout: FC = () => (
@@ -26,8 +27,9 @@ const AdminLayout: FC = () => (
           <Route path="/orders" element={<ProductionOrders />} />
           <Route path="/planning" element={<ProductionPlanning />} />
           <Route path="/planning/new" element={<ProductionPlanningCreate />} />
-          <Route path="/planning/edit/:planId" element={<ProductionPlanningEdit />} /> {/* <-- 2. 添加新路由 */}
+          <Route path="/planning/edit/:planId" element={<ProductionPlanningEdit />} />
           <Route path="/monitoring" element={<ProductionMonitoring />} />
+          <Route path="/monitoring/:planId" element={<ProductionPlanDetail />} /> {/* <-- 2. 添加新路由 */}
           <Route path="/workers" element={<Workers />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
@@ -36,7 +38,6 @@ const AdminLayout: FC = () => (
   </Layout>
 );
 
-// ... (WorkerLayout 和 App 组件不变)
 const WorkerLayout: FC = () => (
   <div style={{ padding: 40 }}>
       <Title level={2}>员工操作界面</Title>
@@ -51,6 +52,7 @@ const WorkerLayout: FC = () => (
       </Button>
   </div>
 );
+
 const App: FC = () => {
   const { isAuthenticated, user, checkAuth } = useAuthStore();
 

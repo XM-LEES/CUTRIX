@@ -31,6 +31,8 @@ type WorkerService interface {
 	Delete(id int) error
 
 	UpdatePassword(updatingUserID int, updatingUserRole string, targetWorkerID int, newPassword string) error
+
+	GetWorkerTaskGroups(workerID int) ([]models.WorkerTaskGroup, error)
 }
 
 type workerService struct {
@@ -130,4 +132,8 @@ func (s *workerService) UpdatePassword(updatingUserID int, updatingUserRole stri
 
 	// 4. 更新数据库
 	return s.workerRepo.UpdatePassword(targetWorkerID, string(hashedPassword))
+}
+
+func (s *workerService) GetWorkerTaskGroups(workerID int) ([]models.WorkerTaskGroup, error) {
+	return s.workerRepo.GetWorkerTaskGroups(workerID)
 }

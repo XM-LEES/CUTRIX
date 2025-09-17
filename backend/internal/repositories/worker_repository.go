@@ -19,6 +19,7 @@ type WorkerRepository interface {
 	GetWorkerTasks(workerID int) ([]*models.ProductionTask, error)
 	GetWorkerLogs(workerID int) ([]*models.ProductionLog, error)
 	UpdatePassword(id int, passwordHash string) error
+	GetWorkerTaskGroups(workerID int) ([]models.WorkerTaskGroup, error)
 }
 
 type workerRepository struct {
@@ -178,4 +179,83 @@ func (r *workerRepository) UpdatePassword(id int, passwordHash string) error {
 		return fmt.Errorf("worker not found")
 	}
 	return nil
+}
+
+// GetWorkerTaskGroups 为工人工作台聚合任务数据
+func (r *workerRepository) GetWorkerTaskGroups(workerID int) ([]models.WorkerTaskGroup, error) {
+	// 这个复杂的SQL查询是实现所有功能的核心
+	query := `
+        WITH WorkerRelevantTasks AS (
+            -- 筛选出与该工人相关的所有未完成的任务
+            SELECT DISTINCT t.*
+            FROM Production_Tasks t
+            WHERE t.completed_layers < t.planned_layers
+            -- 你可以在这里加入更复杂的逻辑，例如只显示被指派给该工人的任务
+            -- 目前的逻辑是：只要任务没完成，所有工人都能看到
+        ),
+        AggregatedPlans AS (
+            -- 按 plan_id 聚合任务数据
+            SELECT
+                p.plan_id,
+                p.plan_name,
+                s.style_number,
+                SUM(wrt.planned_layers) as total_planned,
+                SUM(wrt.completed_layers) as total_completed
+            FROM WorkerRelevantTasks wrt
+            JOIN Cutting_Layouts cl ON wrt.layout_id = cl.layout_id
+            JOIN Production_Plans p ON cl.plan_id = p.plan_id
+            JOIN Styles s ON p.style_id = s.style_id
+            GROUP BY p.plan_id, s.style_number
+        )
+        -- 查询最终结果
+        SELECT * FROM AggregatedPlans ORDER BY plan_id;
+    `
+
+	var taskGroups []models.WorkerTaskGroup
+	if err := r.db.Select(&taskGroups, query); err != nil {
+		return nil, fmt.Errorf("failed to get worker task groups: %w", err)
+	}
+
+	// 现在，为每个 task group 填充具体的 tasks
+	if len(taskGroups) > 0 {
+		planIDs := make([]int, len(taskGroups))
+		for i, tg := range taskGroups {
+			planIDs[i] = tg.PlanID
+		}
+
+		tasksQuery, args, err := sqlx.In(`
+            SELECT t.*
+            FROM Production_Tasks t
+            JOIN Cutting_Layouts cl ON t.layout_id = cl.layout_id
+            WHERE cl.plan_id IN (?);
+        `, planIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to construct tasks query: %w", err)
+		}
+		tasksQuery = r.db.Rebind(tasksQuery)
+
+		var allTasks []models.ProductionTask
+		if err := r.db.Select(&allTasks, tasksQuery, args...); err != nil {
+			return nil, fmt.Errorf("failed to fetch tasks for groups: %w", err)
+		}
+
+		// 将任务分配到对应的 group
+		tasksByPlanID := make(map[int][]models.ProductionTask)
+		// 假设 task 结构体中需要 plan_id 来分组
+		// 如果没有，需要修改查询以包含它
+		// 临时的解决办法是再次查询
+		for _, task := range allTasks {
+			var planId int
+			err := r.db.Get(&planId, "SELECT plan_id FROM Cutting_Layouts WHERE layout_id = $1", task.LayoutID)
+			if err == nil {
+				tasksByPlanID[planId] = append(tasksByPlanID[planId], task)
+			}
+		}
+
+		for i := range taskGroups {
+			taskGroups[i].Tasks = tasksByPlanID[taskGroups[i].PlanID]
+		}
+	}
+
+	return taskGroups, nil
 }

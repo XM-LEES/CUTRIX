@@ -140,6 +140,7 @@ func main() {
 			workers.DELETE("/:id", workerHandler.DeleteWorker)
 			workers.GET("/:id/tasks", workerHandler.GetWorkerTasks)
 			workers.PUT("/:id/password", workerHandler.UpdateWorkerPassword)
+			workers.GET("/:id/task-groups", workerHandler.GetWorkerTaskGroups) // <-- 在这里添加新路由
 		}
 	}
 

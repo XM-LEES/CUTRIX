@@ -221,3 +221,20 @@ func (h *WorkerHandler) UpdateWorkerPassword(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, models.APIResponse{Success: true, Message: "密码更新成功"})
 }
+
+// 在文件末尾添加新的处理器函数
+func (h *WorkerHandler) GetWorkerTaskGroups(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{Success: false, Message: "无效的员工ID"})
+		return
+	}
+
+	taskGroups, err := h.workerService.GetWorkerTaskGroups(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{Success: false, Message: "获取任务组失败", Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{Success: true, Message: "获取任务组成功", Data: taskGroups})
+}

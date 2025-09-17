@@ -206,3 +206,13 @@ export interface PlanState extends AppState {
     plans: ProductionPlan[];
     currentPlan: ProductionPlan | null;
 }
+
+// --- 为员工工作台定制的视图模型 ---
+export interface WorkerTaskGroup {
+  plan_id: number;
+  plan_name: string;
+  style_number: string;
+  total_planned: number;
+  total_completed: number;
+  tasks: ProductionTask[];
+}

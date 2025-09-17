@@ -202,3 +202,13 @@ type TaskProgress struct {
 type UpdateWorkerPasswordRequest struct {
 	Password string `json:"password" validate:"required,min=6"`
 }
+
+// WorkerTaskGroup 是为工人工作台定制的视图模型
+type WorkerTaskGroup struct {
+	PlanID         int              `json:"plan_id" db:"plan_id"`
+	PlanName       string           `json:"plan_name" db:"plan_name"`
+	StyleNumber    string           `json:"style_number" db:"style_number"`
+	TotalPlanned   int              `json:"total_planned" db:"total_planned"`
+	TotalCompleted int              `json:"total_completed" db:"total_completed"`
+	Tasks          []ProductionTask `json:"tasks"` // 这里嵌套了已有的 ProductionTask 模型
+}
