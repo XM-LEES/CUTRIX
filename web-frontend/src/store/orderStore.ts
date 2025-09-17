@@ -1,31 +1,45 @@
 import { create } from 'zustand';
-import type { OrderState } from '../types';
-import { CreateProductionOrderRequest } from '../types';
 import { productionOrderService } from '../services';
+import type { OrderState, CreateProductionOrderRequest } from '../types';
 
 type OrderActions = {
   fetchOrders: (query?: string) => Promise<void>;
+  fetchUnplannedOrders: () => Promise<void>;
   fetchOrder: (id: number) => Promise<void>;
   createOrder: (data: CreateProductionOrderRequest) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
+  clearCurrentOrder: () => void; // <-- 新增
 };
 
 export const useOrderStore = create<OrderState & OrderActions>((set) => ({
   orders: [],
+  unplannedOrders: [],
   currentOrder: null,
   loading: false,
   error: null,
 
-  fetchOrders: async (query?: string) => { // <-- Updated
+  clearCurrentOrder: () => set({ currentOrder: null }), // <-- 新增实现
+
+  fetchUnplannedOrders: async () => {
     set({ loading: true, error: null });
     try {
-      const orders = await productionOrderService.getOrders(query); // <-- Pass query
-      set({ orders: orders || [], loading: false });
+      const orders = await productionOrderService.getUnplannedOrders();
+      set({ unplannedOrders: orders || [], loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
     }
   },
 
+  // ... (其他 action 不变)
+  fetchOrders: async (query?: string) => {
+    set({ loading: true, error: null });
+    try {
+      const orders = await productionOrderService.getOrders(query);
+      set({ orders: orders || [], loading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, loading: false });
+    }
+  },
   fetchOrder: async (id: number) => {
     set({ loading: true, error: null });
     try {
@@ -35,7 +49,6 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
       set({ error: (error as Error).message, loading: false });
     }
   },
-
   createOrder: async (data: CreateProductionOrderRequest) => {
     set({ loading: true, error: null });
     try {
@@ -50,7 +63,6 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
         throw new Error(errorMessage);
     }
   },
-    // v-- 新增 deleteOrder action --v
   deleteOrder: async (id: number) => {
     set({ loading: true, error: null });
     try {

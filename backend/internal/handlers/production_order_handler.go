@@ -17,6 +17,20 @@ func NewProductionOrderHandler(orderService services.ProductionOrderService) *Pr
 	return &ProductionOrderHandler{orderService: orderService}
 }
 
+func (h *ProductionOrderHandler) GetUnplannedOrders(c *gin.Context) {
+	orders, err := h.orderService.GetAllUnplannedOrders()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Success: false, Message: "Failed to retrieve unplanned orders", Error: err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true, Message: "Unplanned orders retrieved successfully", Data: orders,
+	})
+}
+
+// ... (其他函数不变)
 func (h *ProductionOrderHandler) CreateOrder(c *gin.Context) {
 	var req models.CreateProductionOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

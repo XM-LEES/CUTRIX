@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"cutrix-backend/internal/models"
+	"database/sql"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -14,6 +15,8 @@ type ProductionPlanRepository interface {
 	CreateTasks(tx *sqlx.Tx, styleID int, layoutID int, layoutName string, tasks []models.CreateTaskForPlan) error
 	GetPlanWithDetails(planID int) (*models.ProductionPlan, error)
 	GetAllPlans() ([]models.ProductionPlan, error)
+	GetPlanByOrderID(orderID int) (*models.ProductionPlan, error)
+	DeletePlan(planID int) error
 }
 
 type productionPlanRepository struct {
@@ -22,6 +25,65 @@ type productionPlanRepository struct {
 
 func NewProductionPlanRepository(db *sqlx.DB) ProductionPlanRepository {
 	return &productionPlanRepository{db: db}
+}
+
+func (r *productionPlanRepository) DeletePlan(planID int) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction for plan deletion: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Find all layout IDs associated with the plan
+	var layoutIDs []int
+	err = tx.Select(&layoutIDs, `SELECT layout_id FROM Cutting_Layouts WHERE plan_id = $1`, planID)
+	if err != nil {
+		return fmt.Errorf("failed to find layouts for plan: %w", err)
+	}
+
+	// 2. If there are layouts, delete all tasks linked to them
+	if len(layoutIDs) > 0 {
+		query, args, err := sqlx.In(`DELETE FROM Production_Tasks WHERE layout_id IN (?)`, layoutIDs)
+		if err != nil {
+			return fmt.Errorf("failed to construct delete tasks query: %w", err)
+		}
+		query = tx.Rebind(query)
+		_, err = tx.Exec(query, args...)
+		if err != nil {
+			return fmt.Errorf("failed to delete tasks for layouts: %w", err)
+		}
+	}
+
+	// 3. Delete the plan itself. Cascading delete will handle layouts and ratios.
+	planQuery := `DELETE FROM Production_Plans WHERE plan_id = $1`
+	result, err := tx.Exec(planQuery, planID)
+	if err != nil {
+		return fmt.Errorf("failed to delete plan: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected for plan deletion: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("plan not found or already deleted")
+	}
+
+	return tx.Commit()
+}
+
+// ... (其他函数保持不变)
+func (r *productionPlanRepository) GetPlanByOrderID(orderID int) (*models.ProductionPlan, error) {
+	var plan models.ProductionPlan
+	query := `SELECT * FROM Production_Plans WHERE linked_order_id = $1 LIMIT 1`
+	err := r.db.Get(&plan, query, orderID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("plan not found for this order")
+		}
+		return nil, fmt.Errorf("failed to get plan by order id: %w", err)
+	}
+	return &plan, nil
 }
 
 func (r *productionPlanRepository) CreatePlan(tx *sqlx.Tx, req *models.CreateProductionPlanRequest) (*models.ProductionPlan, error) {
@@ -79,32 +141,25 @@ func (r *productionPlanRepository) CreateTasks(tx *sqlx.Tx, styleID int, layoutI
 
 func (r *productionPlanRepository) GetPlanWithDetails(planID int) (*models.ProductionPlan, error) {
 	var plan models.ProductionPlan
-	// 1. 获取计划主体
 	err := r.db.Get(&plan, `SELECT * FROM Production_Plans WHERE plan_id = $1`, planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plan: %w", err)
 	}
 
-	// 2. 获取该计划下的所有排版
 	var layouts []models.CuttingLayout
 	err = r.db.Select(&layouts, `SELECT * FROM Cutting_Layouts WHERE plan_id = $1 ORDER BY layout_id`, planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get layouts for plan: %w", err)
 	}
 
-	// 3. 为每个排版获取其尺码比例和任务
 	for i := range layouts {
 		layoutID := layouts[i].LayoutID
-
-		// 获取尺码比例
 		var ratios []models.LayoutSizeRatio
 		err = r.db.Select(&ratios, `SELECT * FROM Layout_Size_Ratios WHERE layout_id = $1`, layoutID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get ratios for layout %d: %w", layoutID, err)
 		}
 		layouts[i].Ratios = ratios
-
-		// 获取任务
 		var tasks []models.ProductionTask
 		err = r.db.Select(&tasks, `SELECT * FROM Production_Tasks WHERE layout_id = $1`, layoutID)
 		if err != nil {

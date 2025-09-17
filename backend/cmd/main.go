@@ -92,6 +92,7 @@ func main() {
 		{
 			orders.POST("", orderHandler.CreateOrder)
 			orders.GET("", orderHandler.GetOrders)
+			orders.GET("/unplanned", orderHandler.GetUnplannedOrders)
 			orders.GET("/:id", orderHandler.GetOrder)
 			orders.DELETE("/:id", orderHandler.DeleteOrder)
 		}
@@ -102,6 +103,8 @@ func main() {
 			plans.POST("", planHandler.CreatePlan)
 			plans.GET("", planHandler.GetPlans)
 			plans.GET("/:id", planHandler.GetPlan)
+			plans.DELETE("/:id", planHandler.DeletePlan)
+			plans.GET("/by-order/:order_id", planHandler.GetPlanByOrderID)
 		}
 
 		// 生产任务管理

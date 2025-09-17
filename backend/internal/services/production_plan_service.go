@@ -12,6 +12,8 @@ type ProductionPlanService interface {
 	CreatePlan(plan *models.CreateProductionPlanRequest) (*models.ProductionPlan, error)
 	GetPlanByID(id int) (*models.ProductionPlan, error)
 	GetAllPlans() ([]models.ProductionPlan, error)
+	GetPlanByOrderID(orderID int) (*models.ProductionPlan, error)
+	DeletePlanByID(id int) error // <-- 新增
 }
 
 type productionPlanService struct {
@@ -23,6 +25,16 @@ func NewProductionPlanService(db *sqlx.DB, planRepo repositories.ProductionPlanR
 	return &productionPlanService{db: db, planRepo: planRepo}
 }
 
+func (s *productionPlanService) DeletePlanByID(id int) error {
+	return s.planRepo.DeletePlan(id)
+}
+
+// ... (其他函数不变)
+
+func (s *productionPlanService) GetPlanByOrderID(orderID int) (*models.ProductionPlan, error) {
+	return s.planRepo.GetPlanByOrderID(orderID)
+}
+
 func (s *productionPlanService) CreatePlan(req *models.CreateProductionPlanRequest) (*models.ProductionPlan, error) {
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -30,26 +42,19 @@ func (s *productionPlanService) CreatePlan(req *models.CreateProductionPlanReque
 	}
 	defer tx.Rollback()
 
-	// 1. Create Plan
 	plan, err := s.planRepo.CreatePlan(tx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Create Layouts, Ratios, and Tasks
 	for _, layoutReq := range req.Layouts {
-		// Create Layout
 		layout, err := s.planRepo.CreateLayout(tx, plan.PlanID, &layoutReq)
 		if err != nil {
 			return nil, err
 		}
-
-		// Create Ratios for the Layout
 		if err := s.planRepo.CreateRatios(tx, layout.LayoutID, layoutReq.Ratios); err != nil {
 			return nil, err
 		}
-
-		// Create Tasks for the Layout
 		if err := s.planRepo.CreateTasks(tx, req.StyleID, layout.LayoutID, layout.LayoutName, layoutReq.Tasks); err != nil {
 			return nil, err
 		}

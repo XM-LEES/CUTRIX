@@ -17,6 +17,53 @@ func NewProductionPlanHandler(planService services.ProductionPlanService) *Produ
 	return &ProductionPlanHandler{planService: planService}
 }
 
+func (h *ProductionPlanHandler) DeletePlan(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false, Message: "Invalid plan ID", Error: "plan ID must be a number",
+		})
+		return
+	}
+
+	err = h.planService.DeletePlanByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Success: false, Message: "Failed to delete plan", Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true, Message: "Plan deleted successfully",
+	})
+}
+
+// ... (其他函数不变)
+func (h *ProductionPlanHandler) GetPlanByOrderID(c *gin.Context) {
+	idStr := c.Param("order_id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false, Message: "Invalid order ID", Error: "order ID must be a number",
+		})
+		return
+	}
+
+	plan, err := h.planService.GetPlanByOrderID(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.APIResponse{
+			Success: false, Message: "Plan not found for this order", Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true, Message: "Plan retrieved successfully", Data: plan,
+	})
+}
+
 func (h *ProductionPlanHandler) CreatePlan(c *gin.Context) {
 	var req models.CreateProductionPlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

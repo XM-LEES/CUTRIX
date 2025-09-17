@@ -7,9 +7,10 @@ import Workers from './pages/Workers';
 import LoginPage from './pages/Login';
 import { useAuthStore } from './store/authStore';
 import { LogoutOutlined } from '@ant-design/icons';
-import ProductionOrders from './pages/ProductionOrders'; // 新增
-import ProductionPlanning from './pages/ProductionPlanning'; // 新增
-import ProductionMonitoring from './pages/ProductionMonitoring'; // 新增
+import ProductionOrders from './pages/ProductionOrders';
+import ProductionPlanning from './pages/ProductionPlanning';
+import ProductionPlanningCreate from './pages/ProductionPlanningCreate'; // <-- 1. 导入新页面
+import ProductionMonitoring from './pages/ProductionMonitoring';
 const { Title } = Typography;
 
 const { Content } = Layout;
@@ -23,6 +24,7 @@ const AdminLayout: FC = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/orders" element={<ProductionOrders />} />
           <Route path="/planning" element={<ProductionPlanning />} />
+          <Route path="/planning/new" element={<ProductionPlanningCreate />} /> {/* <-- 2. 添加新路由 */}
           <Route path="/monitoring" element={<ProductionMonitoring />} />
           <Route path="/workers" element={<Workers />} />
           <Route path="*" element={<Navigate to="/" />} />

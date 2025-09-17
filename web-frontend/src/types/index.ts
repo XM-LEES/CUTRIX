@@ -156,6 +156,7 @@ export interface CreateProductionOrderRequest {
         quantity: number;
     }>;
 }
+
 // (新) 计划请求
 export interface CreateProductionPlanRequest {
     plan_name: string;
@@ -196,6 +197,7 @@ export interface TaskState extends AppState {
 // (新)
 export interface OrderState extends AppState {
     orders: ProductionOrder[];
+    unplannedOrders?: ProductionOrder[]; // <-- 修复：新增属性
     currentOrder: ProductionOrder | null;
 }
 

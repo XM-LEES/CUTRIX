@@ -12,7 +12,8 @@ import (
 type ProductionOrderRepository interface {
 	CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error)
 	GetOrderWithItems(orderID int) (*models.ProductionOrder, error)
-	GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error) // Signature updated
+	GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error)
+	GetAllUnplannedOrders() ([]models.ProductionOrder, error) // <-- 新增
 	CountOrdersByStyleAndDate(styleID int, date string) (int, error)
 	DeleteOrder(tx *sqlx.Tx, orderID int) error
 }
@@ -25,8 +26,24 @@ func NewProductionOrderRepository(db *sqlx.DB) ProductionOrderRepository {
 	return &productionOrderRepository{db: db}
 }
 
-// CreateOrder and GetOrderWithItems remain the same...
+// GetAllUnplannedOrders retrieves all orders that do not have a linked production plan yet.
+func (r *productionOrderRepository) GetAllUnplannedOrders() ([]models.ProductionOrder, error) {
+	var orders []models.ProductionOrder
+	query := `
+        SELECT po.order_id, po.order_number, po.style_id, po.created_at
+        FROM Production_Orders po
+        WHERE NOT EXISTS (
+            SELECT 1 FROM Production_Plans pp WHERE pp.linked_order_id = po.order_id
+        )
+        ORDER BY po.created_at DESC`
+	err := r.db.Select(&orders, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get unplanned orders: %w", err)
+	}
+	return orders, nil
+}
 
+// ... (其他函数保持不变)
 func (r *productionOrderRepository) CreateOrder(tx *sqlx.Tx, orderNumber string, styleID int, items []models.CreateOrderItem) (*models.ProductionOrder, error) {
 	orderQuery := `INSERT INTO Production_Orders (order_number, style_id) VALUES ($1, $2) RETURNING order_id, order_number, style_id, created_at`
 	var order models.ProductionOrder
@@ -74,7 +91,6 @@ func (r *productionOrderRepository) GetOrderWithItems(orderID int) (*models.Prod
 	return &order, nil
 }
 
-// GetAllOrders now accepts a search query
 func (r *productionOrderRepository) GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error) {
 	var orders []models.ProductionOrder
 
@@ -99,7 +115,6 @@ func (r *productionOrderRepository) GetAllOrders(styleNumberQuery string) ([]mod
 	return orders, nil
 }
 
-// CountOrdersByStyleAndDate and DeleteOrder remain the same...
 func (r *productionOrderRepository) CountOrdersByStyleAndDate(styleID int, date string) (int, error) {
 	var count int
 	startTime, err := time.Parse("20060102", date)

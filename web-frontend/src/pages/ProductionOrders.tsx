@@ -3,9 +3,11 @@ import {
   Typography, Button, Table, Modal, Form, Input, message, Space, Card,
   Row, Col, InputNumber, Popconfirm, Divider, Descriptions
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EyeOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { useOrderStore } from '../store/orderStore';
 import { useStyleStore } from '../store/styleStore';
+import { usePlanStore } from '../store/planStore';
 import type { ProductionOrder, CreateProductionOrderRequest } from '../types';
 import dayjs from 'dayjs';
 
@@ -20,12 +22,14 @@ const ProductionOrders: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ProductionOrder | null>(null);
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
   const { orders, currentOrder, loading, fetchOrders, createOrder, fetchOrder, deleteOrder } = useOrderStore();
   const { styles, fetchStyles } = useStyleStore();
+  const { fetchPlanByOrderId } = usePlanStore();
 
   useEffect(() => {
-    fetchOrders(); // Initial fetch for all orders
+    fetchOrders(); 
     fetchStyles();
   }, [fetchOrders, fetchStyles]);
 
@@ -36,6 +40,18 @@ const ProductionOrders: React.FC = () => {
     }, {} as Record<number, string>);
   }, [styles]);
 
+  const handleViewPlan = async (orderId: number) => {
+    const plan = await fetchPlanByOrderId(orderId);
+    if (plan) {
+      // 如果找到了计划，跳转到进度监控页
+      navigate(`/monitoring?plan_id=${plan.plan_id}`);
+    } else {
+      // 如果没找到，给出提示
+      message.info('该订单尚未创建生产计划');
+    }
+  };
+
+  // ... (handleCreate, handleDelete, handleViewDetails, handleSearch 函数不变)
   const handleCreate = async (values: any) => {
     const matrixItems = (values.matrix || [])
       .flatMap((row: { color: string; sizes: Record<string, number> }) => {
@@ -86,6 +102,7 @@ const ProductionOrders: React.FC = () => {
     fetchOrders(value.trim());
   };
 
+
   const mainColumns = [
     { title: '订单号', dataIndex: 'order_number', key: 'order_number', width: 220 },
     { title: '款号', dataIndex: 'style_id', key: 'style_id', render: (styleId: number) => styleMap[styleId] || '未知款号' },
@@ -97,6 +114,14 @@ const ProductionOrders: React.FC = () => {
           <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetails(record)}>
             查看详情
           </Button>
+          <Button
+            type="primary"
+            icon={<ScheduleOutlined />}
+            size="small"
+            onClick={() => handleViewPlan(record.order_id)}
+          >
+            查看生产计划
+          </Button>
           <Popconfirm title="确定删除此订单？" onConfirm={() => handleDelete(record.order_id)}>
             <Button icon={<DeleteOutlined />} size="small" danger />
           </Popconfirm>
@@ -104,7 +129,7 @@ const ProductionOrders: React.FC = () => {
       ),
     },
   ];
-
+// ... (后面的代码不变)
   const detailColumns = [
     { title: '颜色', dataIndex: 'color', key: 'color' },
     { title: '尺码', dataIndex: 'size', key: 'size' },
@@ -137,7 +162,7 @@ const ProductionOrders: React.FC = () => {
         <Table columns={mainColumns} dataSource={orders} rowKey="order_id" loading={loading} pagination={{ pageSize: 10 }} />
       </Card>
       
-      {/* Modals remain the same... */}
+      {/* Modals */}
       <Modal
         title="录入新生产订单"
         open={isModalOpen}

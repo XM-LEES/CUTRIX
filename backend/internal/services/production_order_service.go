@@ -13,6 +13,7 @@ type ProductionOrderService interface {
 	CreateOrder(order *models.CreateProductionOrderRequest) (*models.ProductionOrder, error)
 	GetOrderByID(id int) (*models.ProductionOrder, error)
 	GetAllOrders(styleNumberQuery string) ([]models.ProductionOrder, error)
+	GetAllUnplannedOrders() ([]models.ProductionOrder, error) // <-- 新增
 	DeleteOrderByID(id int) error
 }
 
@@ -29,6 +30,12 @@ func NewProductionOrderService(db *sqlx.DB, orderRepo repositories.ProductionOrd
 		styleRepo: styleRepo,
 	}
 }
+
+func (s *productionOrderService) GetAllUnplannedOrders() ([]models.ProductionOrder, error) {
+	return s.orderRepo.GetAllUnplannedOrders()
+}
+
+// ... (其他函数不变)
 
 func (s *productionOrderService) CreateOrder(req *models.CreateProductionOrderRequest) (*models.ProductionOrder, error) {
 	tx, err := s.db.Beginx()
