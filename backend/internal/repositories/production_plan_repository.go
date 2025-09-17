@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.comcom/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx"
 )
 
 type ProductionPlanRepository interface {
