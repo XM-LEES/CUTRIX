@@ -11,14 +11,17 @@ import {
 
 // 生产计划服务
 export const productionPlanService = {
-  getPlans: () => apiService.get<ProductionPlan[]>('/production-plans'),
+  getPlans: (query?: string) => {
+    const endpoint = query ? `/production-plans?q=${query}` : '/production-plans';
+    return apiService.get<ProductionPlan[]>(endpoint);
+  },
   getPlan: (id: number) => apiService.get<ProductionPlan>(`/production-plans/${id}`),
   createPlan: (data: CreateProductionPlanRequest) => apiService.post<ProductionPlan>('/production-plans', data),
+  updatePlan: (id: number, data: CreateProductionPlanRequest) => apiService.put<ProductionPlan>(`/production-plans/${id}`, data), // <-- 新增
   getPlanByOrderId: (orderId: number) => apiService.get<ProductionPlan>(`/production-plans/by-order/${orderId}`),
-  deletePlan: (id: number) => apiService.delete(`/production-plans/${id}`), // <-- 新增
+  deletePlan: (id: number) => apiService.delete(`/production-plans/${id}`),
 };
 
-// ... (其他服务不变)
 export const styleService = {
   getStyles: () => apiService.get<Style[]>('/styles'),
   getStyle: (id: number) => apiService.get<Style>(`/styles/${id}`),

@@ -4,11 +4,12 @@ import { CreateProductionPlanRequest } from '../types';
 import { productionPlanService } from '../services';
 
 type PlanActions = {
-  fetchPlans: () => Promise<void>;
+  fetchPlans: (query?: string) => Promise<void>;
   fetchPlan: (id: number) => Promise<void>;
   createPlan: (data: CreateProductionPlanRequest) => Promise<void>;
+  updatePlan: (id: number, data: CreateProductionPlanRequest) => Promise<void>; // <-- 新增
   fetchPlanByOrderId: (orderId: number) => Promise<ProductionPlan | null>;
-  deletePlan: (id: number) => Promise<void>; // <-- 新增
+  deletePlan: (id: number) => Promise<void>;
 };
 
 export const usePlanStore = create<PlanState & PlanActions>((set) => ({
@@ -32,7 +33,6 @@ export const usePlanStore = create<PlanState & PlanActions>((set) => ({
     }
   },
 
-  // ... (其他 action 不变)
   fetchPlanByOrderId: async (orderId: number) => {
     set({ loading: true, error: null });
     try {
@@ -45,10 +45,10 @@ export const usePlanStore = create<PlanState & PlanActions>((set) => ({
     }
   },
 
-  fetchPlans: async () => {
+  fetchPlans: async (query?: string) => { // <-- 修改
     set({ loading: true, error: null });
     try {
-      const plans = await productionPlanService.getPlans();
+      const plans = await productionPlanService.getPlans(query); // <-- 传递查询
       set({ plans: plans || [], loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
@@ -77,6 +77,21 @@ export const usePlanStore = create<PlanState & PlanActions>((set) => ({
         const errorMessage = (error as Error).message;
         set({ error: errorMessage, loading: false });
         throw new Error(errorMessage);
+    }
+  },
+
+  updatePlan: async (id: number, data: CreateProductionPlanRequest) => {
+    set({ loading: true, error: null });
+    try {
+      const updatedPlan = await productionPlanService.updatePlan(id, data);
+      set((state) => ({
+        plans: state.plans.map((p) => p.plan_id === id ? updatedPlan : p),
+        loading: false,
+      }));
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      set({ error: errorMessage, loading: false });
+      throw new Error(errorMessage);
     }
   },
 }));

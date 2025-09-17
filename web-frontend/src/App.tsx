@@ -9,7 +9,8 @@ import { useAuthStore } from './store/authStore';
 import { LogoutOutlined } from '@ant-design/icons';
 import ProductionOrders from './pages/ProductionOrders';
 import ProductionPlanning from './pages/ProductionPlanning';
-import ProductionPlanningCreate from './pages/ProductionPlanningCreate'; // <-- 1. 导入新页面
+import ProductionPlanningCreate from './pages/ProductionPlanningCreate';
+import ProductionPlanningEdit from './pages/ProductionPlanningEdit';
 import ProductionMonitoring from './pages/ProductionMonitoring';
 const { Title } = Typography;
 
@@ -24,7 +25,8 @@ const AdminLayout: FC = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/orders" element={<ProductionOrders />} />
           <Route path="/planning" element={<ProductionPlanning />} />
-          <Route path="/planning/new" element={<ProductionPlanningCreate />} /> {/* <-- 2. 添加新路由 */}
+          <Route path="/planning/new" element={<ProductionPlanningCreate />} />
+          <Route path="/planning/edit/:planId" element={<ProductionPlanningEdit />} /> {/* <-- 2. 添加新路由 */}
           <Route path="/monitoring" element={<ProductionMonitoring />} />
           <Route path="/workers" element={<Workers />} />
           <Route path="*" element={<Navigate to="/" />} />
@@ -33,7 +35,8 @@ const AdminLayout: FC = () => (
     </Layout>
   </Layout>
 );
-// 员工视图 (占位符)
+
+// ... (WorkerLayout 和 App 组件不变)
 const WorkerLayout: FC = () => (
   <div style={{ padding: 40 }}>
       <Title level={2}>员工操作界面</Title>
@@ -48,8 +51,6 @@ const WorkerLayout: FC = () => (
       </Button>
   </div>
 );
-
-
 const App: FC = () => {
   const { isAuthenticated, user, checkAuth } = useAuthStore();
 

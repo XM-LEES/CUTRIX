@@ -1,20 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Typography, Button, Table, message, Space, Card,
-  Row, Col, Popconfirm, Tag, Input, Modal, Descriptions, Collapse
+  Row, Col, Popconfirm, Tag, Input, Modal, Descriptions
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { usePlanStore } from '../store/planStore';
 import { useStyleStore } from '../store/styleStore';
 import { useOrderStore } from '../store/orderStore';
-import type { ProductionPlan } from '../types';
+import type { ProductionPlan, ProductionTask } from '../types';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
-const { Panel } = Collapse;
-
 
 const ProductionPlanning: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -45,6 +43,10 @@ const ProductionPlanning: React.FC = () => {
     await fetchPlan(planId);
     setIsDetailModalOpen(true);
   };
+  
+  const handleSearch = (value: string) => {
+    fetchPlans(value.trim());
+  };
 
   const mainColumns = [
     { title: '计划名称', dataIndex: 'plan_name', key: 'plan_name' },
@@ -58,7 +60,7 @@ const ProductionPlanning: React.FC = () => {
           <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetails(record.plan_id)}>
             查看详情
           </Button>
-          <Button icon={<EditOutlined />} size="small" onClick={() => message.info('修改功能待开发')}>
+          <Button icon={<EditOutlined />} size="small" onClick={() => navigate(`/planning/edit/${record.plan_id}`)}>
             修改
           </Button>
           <Button icon={<EyeOutlined />} size="small" type="primary" onClick={() => navigate(`/monitoring?plan_id=${record.plan_id}`)}>
@@ -71,6 +73,13 @@ const ProductionPlanning: React.FC = () => {
       ),
     },
   ];
+  
+  const layoutDetailColumns = [
+      { title: '排版名称', dataIndex: 'layout_name', key: 'layout_name'},
+      { title: '尺码配比', dataIndex: 'ratios', key: 'ratios', render: (ratios: any[]) => ratios?.map(r => `${r.size}(${r.ratio})`).join(' | ') },
+      { title: '颜色', dataIndex: 'tasks', key: 'color', render: (tasks: ProductionTask[]) => tasks?.map(t => t.color).join(', ') },
+      { title: '拉布层数', dataIndex: 'tasks', key: 'layers', render: (tasks: ProductionTask[]) => tasks?.[0]?.planned_layers },
+  ];
 
   return (
     <div>
@@ -80,7 +89,7 @@ const ProductionPlanning: React.FC = () => {
           <Col>
             <Search
               placeholder="按计划名称或订单号搜索..."
-              onSearch={() => message.info('搜索功能待开发')}
+              onSearch={handleSearch}
               style={{ width: 250 }}
               allowClear
             />
@@ -105,27 +114,26 @@ const ProductionPlanning: React.FC = () => {
         open={isDetailModalOpen}
         onCancel={() => setIsDetailModalOpen(false)}
         footer={null}
-        width={800}
+        width={900}
       >
         {loading || !currentPlan ? <Text>加载中...</Text> : (
-            <Collapse accordion>
-              {(currentPlan.layouts || []).map((layout) => (
-                <Panel header={layout.layout_name} key={layout.layout_id}>
-                  <Descriptions bordered column={1} size="small">
-                    <Descriptions.Item label="尺码配比">
-                      {layout.ratios?.map(r => `${r.size}(${r.ratio})`).join(' | ')}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="生产任务">
-                      <ul style={{paddingLeft: 0, listStyle: 'none'}}>
-                        {layout.tasks?.map(t => (
-                          <li key={t.task_id}>{t.color}: <Text strong>{t.planned_layers}</Text> 层</li>
-                        ))}
-                      </ul>
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Panel>
-              ))}
-            </Collapse>
+            <Space direction="vertical" style={{width: '100%'}}>
+                <Descriptions bordered column={2} size="small">
+                    <Descriptions.Item label="计划名称">{currentPlan.plan_name}</Descriptions.Item>
+                    <Descriptions.Item label="关联订单">{orderMap[currentPlan.linked_order_id || 0] || '无'}</Descriptions.Item>
+                    <Descriptions.Item label="款号">{styleMap[currentPlan.style_id]}</Descriptions.Item>
+                    <Descriptions.Item label="创建时间">{dayjs(currentPlan.created_at).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
+                </Descriptions>
+                <Title level={5} style={{marginTop: 16}}>排版方案列表</Title>
+                <Table
+                    columns={layoutDetailColumns}
+                    dataSource={currentPlan.layouts}
+                    rowKey="layout_id"
+                    pagination={false}
+                    size="small"
+                    bordered
+                />
+            </Space>
         )}
       </Modal>
 

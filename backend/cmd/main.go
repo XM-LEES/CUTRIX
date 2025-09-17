@@ -103,10 +103,10 @@ func main() {
 			plans.POST("", planHandler.CreatePlan)
 			plans.GET("", planHandler.GetPlans)
 			plans.GET("/:id", planHandler.GetPlan)
+			plans.PUT("/:id", planHandler.UpdatePlan)
 			plans.DELETE("/:id", planHandler.DeletePlan)
 			plans.GET("/by-order/:order_id", planHandler.GetPlanByOrderID)
 		}
-
 		// 生产任务管理
 		tasks := api.Group("/tasks")
 		{
