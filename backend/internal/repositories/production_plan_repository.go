@@ -43,8 +43,31 @@ func (r *productionPlanRepository) UpdatePlan(tx *sqlx.Tx, planID int, req *mode
 		return fmt.Errorf("failed to find old layouts: %w", err)
 	}
 
-	// 3. Delete old tasks associated with the plan's layouts
+	// 3. Disassociate or delete logs and then delete old tasks
 	if len(oldLayoutIDs) > 0 {
+		var taskIDsToDelete []int
+		taskQuery, taskArgs, err := sqlx.In(`SELECT task_id FROM Production_Tasks WHERE layout_id IN (?)`, oldLayoutIDs)
+		if err != nil {
+			return fmt.Errorf("failed to construct select tasks query: %w", err)
+		}
+		taskQuery = tx.Rebind(taskQuery)
+		err = tx.Select(&taskIDsToDelete, taskQuery, taskArgs...)
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("failed to find tasks to delete: %w", err)
+		}
+
+		if len(taskIDsToDelete) > 0 {
+			logQuery, logArgs, err := sqlx.In(`UPDATE Production_Logs SET task_id = NULL WHERE task_id IN (?)`, taskIDsToDelete)
+			if err != nil {
+				return fmt.Errorf("failed to construct update logs query: %w", err)
+			}
+			logQuery = tx.Rebind(logQuery)
+			_, err = tx.Exec(logQuery, logArgs...)
+			if err != nil {
+				return fmt.Errorf("failed to update production_logs: %w", err)
+			}
+		}
+
 		query, args, err := sqlx.In(`DELETE FROM Production_Tasks WHERE layout_id IN (?)`, oldLayoutIDs)
 		if err != nil {
 			return fmt.Errorf("failed to construct delete tasks query: %w", err)
@@ -92,6 +115,29 @@ func (r *productionPlanRepository) DeletePlan(planID int) error {
 		return fmt.Errorf("failed to find layouts for plan: %w", err)
 	}
 	if len(layoutIDs) > 0 {
+		var taskIDsToDelete []int
+		taskQuery, taskArgs, err := sqlx.In(`SELECT task_id FROM Production_Tasks WHERE layout_id IN (?)`, layoutIDs)
+		if err != nil {
+			return fmt.Errorf("failed to construct select tasks query: %w", err)
+		}
+		taskQuery = tx.Rebind(taskQuery)
+		err = tx.Select(&taskIDsToDelete, taskQuery, taskArgs...)
+		if err != nil && err != sql.ErrNoRows {
+			return fmt.Errorf("failed to find tasks to delete: %w", err)
+		}
+
+		if len(taskIDsToDelete) > 0 {
+			logQuery, logArgs, err := sqlx.In(`UPDATE Production_Logs SET task_id = NULL WHERE task_id IN (?)`, taskIDsToDelete)
+			if err != nil {
+				return fmt.Errorf("failed to construct update logs query: %w", err)
+			}
+			logQuery = tx.Rebind(logQuery)
+			_, err = tx.Exec(logQuery, logArgs...)
+			if err != nil {
+				return fmt.Errorf("failed to update production_logs: %w", err)
+			}
+		}
+
 		query, args, err := sqlx.In(`DELETE FROM Production_Tasks WHERE layout_id IN (?)`, layoutIDs)
 		if err != nil {
 			return fmt.Errorf("failed to construct delete tasks query: %w", err)
