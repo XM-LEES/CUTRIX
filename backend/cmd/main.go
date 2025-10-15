@@ -44,7 +44,6 @@ func main() {
 	// ======== 统一初始化所有仓库 (Repositories) ========
 	styleRepo := repositories.NewStyleRepository(db)
 	taskRepo := repositories.NewTaskRepository(db)
-	fabricRepo := repositories.NewFabricRepository(db)
 	logRepo := repositories.NewLogRepository(db)
 	workerRepo := repositories.NewWorkerRepository(db)
 	orderRepo := repositories.NewProductionOrderRepository(db)
@@ -54,7 +53,6 @@ func main() {
 	authService := services.NewAuthService(workerRepo)
 	styleService := services.NewStyleService(styleRepo)
 	taskService := services.NewTaskService(taskRepo, styleRepo)
-	fabricService := services.NewFabricService(fabricRepo, styleRepo)
 	logService := services.NewLogService(logRepo)
 	orderService := services.NewProductionOrderService(db, orderRepo, styleRepo)
 	planService := services.NewProductionPlanService(db, planRepo)
@@ -64,7 +62,6 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 	styleHandler := handlers.NewStyleHandler(styleService)
 	taskHandler := handlers.NewTaskHandler(taskService)
-	fabricHandler := handlers.NewFabricHandler(fabricService)
 	logHandler := handlers.NewLogHandler(logService)
 	orderHandler := handlers.NewProductionOrderHandler(orderService)
 	planHandler := handlers.NewProductionPlanHandler(planService)
@@ -113,14 +110,6 @@ func main() {
 			tasks.GET("", taskHandler.GetTasks)
 			tasks.GET("/:id", taskHandler.GetTask)
 			tasks.GET("/progress", taskHandler.GetTaskProgress)
-		}
-
-		// 布匹管理
-		fabric := api.Group("/fabric-rolls")
-		{
-			fabric.POST("", fabricHandler.CreateFabricRoll)
-			fabric.GET("", fabricHandler.GetFabricRolls)
-			fabric.GET("/:id", fabricHandler.GetFabricRoll)
 		}
 
 		// 生产记录

@@ -42,7 +42,6 @@ const ProductionPlanningCreate: React.FC = () => {
   useEffect(() => {
     fetchUnplannedOrders();
     fetchStyles();
-    // 关键修复：组件加载时和卸载时都清理，确保干净状态
     clearCurrentOrder(); 
     return () => {
       clearCurrentOrder();

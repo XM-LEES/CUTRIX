@@ -29,7 +29,6 @@ func (s *LogService) CreateProductionLog(req *models.CreateProductionLogRequest)
 
 	log := &models.ProductionLog{
 		TaskID:          req.TaskID,
-		RollID:          req.RollID,
 		ParentLogID:     req.ParentLogID,
 		WorkerID:        req.WorkerID,
 		ProcessName:     req.ProcessName,

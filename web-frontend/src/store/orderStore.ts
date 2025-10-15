@@ -8,7 +8,7 @@ type OrderActions = {
   fetchOrder: (id: number) => Promise<void>;
   createOrder: (data: CreateProductionOrderRequest) => Promise<void>;
   deleteOrder: (id: number) => Promise<void>;
-  clearCurrentOrder: () => void; // <-- 新增
+  clearCurrentOrder: () => void;
 };
 
 export const useOrderStore = create<OrderState & OrderActions>((set) => ({
@@ -18,7 +18,7 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
   loading: false,
   error: null,
 
-  clearCurrentOrder: () => set({ currentOrder: null }), // <-- 新增实现
+  clearCurrentOrder: () => set({ currentOrder: null }),
 
   fetchUnplannedOrders: async () => {
     set({ loading: true, error: null });
@@ -30,7 +30,6 @@ export const useOrderStore = create<OrderState & OrderActions>((set) => ({
     }
   },
 
-  // ... (其他 action 不变)
   fetchOrders: async (query?: string) => {
     set({ loading: true, error: null });
     try {

@@ -69,20 +69,10 @@ CREATE TABLE Production_Tasks (
     completed_layers INT NOT NULL DEFAULT 0
 );
 
--- 创建布匹表
-CREATE TABLE Fabric_Rolls (
-    roll_id VARCHAR(100) PRIMARY KEY,
-    style_id INT NOT NULL REFERENCES Styles(style_id),
-    color VARCHAR(50) NOT NULL,
-    registration_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL DEFAULT '可用'
-);
-
 -- 创建生产记录表
 CREATE TABLE Production_Logs (
     log_id BIGSERIAL PRIMARY KEY,
     task_id INT REFERENCES Production_Tasks(task_id),
-    roll_id VARCHAR(100) REFERENCES Fabric_Rolls(roll_id),
     parent_log_id BIGINT REFERENCES Production_Logs(log_id),
     worker_id INT NOT NULL REFERENCES Workers(worker_id),
     process_name VARCHAR(20) NOT NULL,
@@ -117,7 +107,6 @@ CREATE INDEX idx_cutting_layouts_plan_id ON Cutting_Layouts(plan_id);
 CREATE INDEX idx_layout_size_ratios_layout_id ON Layout_Size_Ratios(layout_id);
 CREATE INDEX idx_production_tasks_style_id ON Production_Tasks(style_id);
 CREATE INDEX idx_production_tasks_layout_id ON Production_Tasks(layout_id);
-CREATE INDEX idx_fabric_rolls_style_id ON Fabric_Rolls(style_id);
 CREATE INDEX idx_production_logs_task_id ON Production_Logs(task_id);
 CREATE INDEX idx_production_logs_worker_id ON Production_Logs(worker_id);
 CREATE UNIQUE INDEX idx_workers_name ON Workers(name);

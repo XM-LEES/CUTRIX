@@ -50,18 +50,9 @@ export interface Worker {
   is_active: boolean;
 }
 
-export interface FabricRoll {
-  roll_id: string;
-  style_id: number;
-  color: string;
-  registration_time: string;
-  status: '可用' | '使用中' | '已用完';
-}
-
 export interface ProductionLog {
   log_id: number;
   task_id?: number;
-  roll_id?: string;
   parent_log_id?: number;
   worker_id: number;
   process_name: '放料' | '拉布' | '裁剪' | '打包';
@@ -176,7 +167,6 @@ export interface CreateProductionPlanRequest {
 // --- 修正点 1：添加缺失的 CreateProductionLogRequest 类型 ---
 export interface CreateProductionLogRequest {
     task_id?: number;
-    roll_id?: string;
     parent_log_id?: number;
     worker_id: number;
     process_name: '放料' | '拉布' | '裁剪' | '打包';

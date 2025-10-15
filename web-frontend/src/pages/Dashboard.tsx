@@ -3,7 +3,6 @@ import { Typography, Row, Col, Card, Statistic, Spin } from 'antd';
 import {
   TagsOutlined,
   UnorderedListOutlined,
-  BlockOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import { useStyleStore } from '../store/styleStore';
@@ -64,16 +63,6 @@ const Dashboard: React.FC = () => {
               value={pendingTasks}
               prefix={<UnorderedListOutlined />}
               valueStyle={{ color: '#cf1322' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={12} lg={6}>
-          <Card>
-            <Statistic
-              title="布匹库存 (开发中)"
-              value={0}
-              prefix={<BlockOutlined />}
-              valueStyle={{ color: '#1890ff' }}
             />
           </Card>
         </Col>

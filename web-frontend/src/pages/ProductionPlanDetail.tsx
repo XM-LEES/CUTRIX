@@ -97,7 +97,6 @@ const ProductionPlanDetail: React.FC = () => {
       { title: '员工ID', dataIndex: 'worker_id', key: 'worker_id' }, // TODO: 关联员工姓名
       { title: '工序', dataIndex: 'process_name', key: 'process_name' },
       { title: '完成层数', dataIndex: 'layers_completed', key: 'layers_completed' },
-      { title: '关联布匹', dataIndex: 'roll_id', key: 'roll_id' },
   ];
 
   return (

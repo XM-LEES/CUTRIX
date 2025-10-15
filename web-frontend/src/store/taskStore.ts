@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { productionPlanService, workerService, logService } from '../services'; // 引入 logService
+import { productionPlanService, workerService, logService } from '../services';
 import type { ProductionPlan, AppState, CreateProductionLogRequest, WorkerTaskGroup } from '../types';
+import { useAuthStore } from './authStore'; 
 
 interface TaskState extends AppState {
   taskGroups: WorkerTaskGroup[];
@@ -37,20 +38,24 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
   
   submitLog: async (log) => {
-    // 提交日志时不应全局 loading，而是局部 loading
     try {
       await logService.createLog(log);
       
-      // 成功后，刷新当前计划的数据
       const currentPlanId = get().currentPlan?.plan_id;
       if (currentPlanId) {
-        // 静默刷新，不设置全局 loading
+        // 1. 静默刷新当前计划详情页的数据
         const plan = await productionPlanService.getPlan(currentPlanId);
         set({ currentPlan: plan });
       }
+
+      // 2. 新增：刷新工人仪表盘的任务组数据
+      const workerId = useAuthStore.getState().user?.worker_id;
+      if (workerId) {
+        await get().fetchWorkerTaskGroups(workerId);
+      }
+
     } catch (error) {
        const errorMessage = (error as Error).message;
-       // 这里不设置全局 error，让组件自己处理
        throw new Error(errorMessage);
     }
   }

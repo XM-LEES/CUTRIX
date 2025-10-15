@@ -19,18 +19,9 @@ type Worker struct {
 	IsActive     bool    `json:"is_active" db:"is_active"`
 }
 
-type FabricRoll struct {
-	RollID           string    `json:"roll_id" db:"roll_id" validate:"required"`
-	StyleID          int       `json:"style_id" db:"style_id" validate:"required"`
-	Color            string    `json:"color" db:"color" validate:"required"`
-	RegistrationTime time.Time `json:"registration_time" db:"registration_time"`
-	Status           string    `json:"status" db:"status" validate:"required,oneof=可用 使用中 已用完"`
-}
-
 type ProductionLog struct {
 	LogID           int64     `json:"log_id" db:"log_id"`
 	TaskID          *int      `json:"task_id" db:"task_id"`
-	RollID          *string   `json:"roll_id" db:"roll_id"`
 	ParentLogID     *int64    `json:"parent_log_id" db:"parent_log_id"`
 	WorkerID        int       `json:"worker_id" db:"worker_id" validate:"required"`
 	ProcessName     string    `json:"process_name" db:"process_name" validate:"required,oneof=放料 拉布 裁剪 打包"`
@@ -128,20 +119,13 @@ type UpdateWorkerRequest struct {
 	IsActive    bool    `json:"is_active"`
 }
 
-// 布匹
-type CreateFabricRollRequest struct {
-	StyleID int    `json:"style_id" validate:"required"`
-	Color   string `json:"color" validate:"required"`
-}
-
 // 生产记录
 type CreateProductionLogRequest struct {
-	TaskID          *int    `json:"task_id"`
-	RollID          *string `json:"roll_id"`
-	ParentLogID     *int64  `json:"parent_log_id"`
-	WorkerID        int     `json:"worker_id" validate:"required"`
-	ProcessName     string  `json:"process_name" validate:"required,oneof=放料 拉布 裁剪 打包"`
-	LayersCompleted *int    `json:"layers_completed"`
+	TaskID          *int   `json:"task_id"`
+	ParentLogID     *int64 `json:"parent_log_id"`
+	WorkerID        int    `json:"worker_id" validate:"required"`
+	ProcessName     string `json:"process_name" validate:"required,oneof=放料 拉布 裁剪 打包"`
+	LayersCompleted *int   `json:"layers_completed"`
 }
 
 // 订单 (新)
