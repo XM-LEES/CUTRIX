@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Spin, Typography, message, Card, Tag } from 'antd';
+import { Button, Spin, Typography, message, Card, Tag, Collapse } from 'antd';
 import { LeftOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTaskStore } from '../store/taskStore';
 import { useAuthStore } from '../store/authStore';
 import type { ProductionTask } from '../types';
 
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
 const KeypadButton = ({ value, onClick, children, className = '' }: any) => (
     <Button style={{ height: 70, fontSize: 28, fontWeight: 500 }} className={className} onClick={() => onClick(value)}>
@@ -29,7 +30,16 @@ const TaskOperation: React.FC = () => {
             fetchPlanForTask(Number(planId));
         }
     }, [planId, fetchPlanForTask]);
-    
+
+    // **修改点**: 使用 useMemo 优化，并找到第一个未完成的任务所在的版
+    const firstUnfinishedLayoutId = useMemo(() => {
+        if (!currentPlan) return null;
+        const layout = currentPlan.layouts?.find(l => 
+            l.tasks?.some(t => t.completed_layers < t.planned_layers)
+        );
+        return layout?.layout_id;
+    }, [currentPlan]);
+
     useEffect(() => {
         // 当 currentPlan 加载或更新时，默认选中第一个未完成的任务
         if (currentPlan) {
@@ -90,9 +100,8 @@ const TaskOperation: React.FC = () => {
     if (loading || !currentPlan) {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><Spin size="large" /></div>;
     }
-
-    const allTasks = currentPlan.layouts?.flatMap(l => l.tasks || []) || [];
-
+    
+    // **核心修改点**: 任务列表现在按“版”分组渲染
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#f0f2f5' }}>
             <header style={headerStyle}>
@@ -105,29 +114,38 @@ const TaskOperation: React.FC = () => {
             </header>
 
             <main style={{ padding: 24, flexGrow: 1, display: 'flex', gap: 24, overflow: 'hidden' }}>
-                <Card title="选择颜色" bodyStyle={{ padding: 0, overflowY: 'auto' }} style={{ width: 450, display: 'flex', flexDirection: 'column' }}>
-                    {allTasks.map(task => (
-                        <div
-                            key={task.task_id}
-                            onClick={() => { setInputValue('0'); setSelectedTask(task); }}
-                            style={{ padding: '16px 20px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', backgroundColor: selectedTask?.task_id === task.task_id ? '#e6f4ff' : 'white', borderRight: selectedTask?.task_id === task.task_id ? '4px solid #1677ff' : 'none' }}
-                        >
-                            <Text style={{ fontSize: 18, fontWeight: 500 }}>{task.color}</Text>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-                                <Text type="secondary">{task.completed_layers} / {task.planned_layers} 层</Text>
-                                {task.completed_layers >= task.planned_layers 
-                                    ? <Tag color="success">已完成</Tag>
-                                    : <Tag color="error">还少 {task.planned_layers - task.completed_layers} 层</Tag>
-                                }
-                            </div>
-                        </div>
-                    ))}
+                <Card title="选择任务" bodyStyle={{ padding: 0, overflowY: 'auto' }} style={{ width: 450, display: 'flex', flexDirection: 'column' }}>
+                    <Collapse accordion defaultActiveKey={firstUnfinishedLayoutId ? String(firstUnfinishedLayoutId) : undefined} ghost>
+                        {currentPlan.layouts?.map(layout => (
+                            <Panel header={<Title level={5} style={{margin: 0}}>{layout.layout_name}</Title>} key={layout.layout_id}>
+                                {layout.tasks?.map(task => (
+                                    <div
+                                        key={task.task_id}
+                                        onClick={() => { setInputValue('0'); setSelectedTask(task); }}
+                                        style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', backgroundColor: selectedTask?.task_id === task.task_id ? '#e6f4ff' : 'white', borderRight: selectedTask?.task_id === task.task_id ? '4px solid #1677ff' : 'none' }}
+                                    >
+                                        <Text style={{ fontSize: 18, fontWeight: 500 }}>{task.color}</Text>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                                            <Text type="secondary">{task.completed_layers} / {task.planned_layers} 层</Text>
+                                            {task.completed_layers >= task.planned_layers 
+                                                ? <Tag color="success">已完成</Tag>
+                                                : <Tag color="processing">还少 {task.planned_layers - task.completed_layers} 层</Tag>
+                                            }
+                                        </div>
+                                    </div>
+                                ))}
+                            </Panel>
+                        ))}
+                    </Collapse>
                 </Card>
 
                 <Card style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                     {selectedTask ? (
                     <>
-                        <Title level={4} style={{marginTop: 0}}>正在为 <Text style={{color: '#1677ff'}}>{selectedTask?.color}</Text> 录入本次完成层数</Title>
+                        <Title level={4} style={{marginTop: 0}}>
+                            正在为 <Tag color="blue" style={{fontSize: 18, padding: '4px 8px'}}>{selectedTask.layout_name}</Tag>
+                            的 <Text style={{color: '#1677ff'}}>{selectedTask?.color}</Text> 录入本次完成层数
+                        </Title>
                         <div style={{ flexGrow: 1, display: 'flex', gap: 24, alignItems: 'stretch' }}>
                             <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                                 <div style={{ backgroundColor: '#f0f2f5', borderRadius: 8, padding: 24, textAlign: 'right', fontSize: 80, fontWeight: 'bold', color: '#1677ff', lineHeight: 1, overflow: 'hidden' }}>
