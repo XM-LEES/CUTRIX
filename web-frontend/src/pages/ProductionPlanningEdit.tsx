@@ -171,7 +171,7 @@ const ProductionPlanningEdit: React.FC = () => {
                     <Space>
                         <Text strong>关联订单:</Text>
                         <Text>{currentOrder?.order_number}</Text>
-                        <Text type="secondary">(款号: {styleMap[currentOrder?.style_id || 0]})</Text>
+                        <Text type="secondary">(款号: {currentOrder?.style_id ? styleMap[currentOrder.style_id] || '未知' : '未知'})</Text>
                     </Space>
                 </Col>
                 <Col>

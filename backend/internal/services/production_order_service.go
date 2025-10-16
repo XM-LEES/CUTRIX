@@ -86,9 +86,16 @@ func (s *productionOrderService) GetAllOrders(styleNumberQuery string) ([]models
 }
 
 func (s *productionOrderService) DeleteOrderByID(id int) error {
-	// 先检查是否有关联的生产计划
+	// 开始事务
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return fmt.Errorf("开始事务失败: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 在事务中检查是否有关联的生产计划
 	var planExists bool
-	err := s.db.Get(&planExists, `SELECT EXISTS(SELECT 1 FROM Production_Plans WHERE linked_order_id = $1)`, id)
+	err = tx.Get(&planExists, `SELECT EXISTS(SELECT 1 FROM Production_Plans WHERE linked_order_id = $1)`, id)
 	if err != nil {
 		return fmt.Errorf("检查关联生产计划失败: %w", err)
 	}
@@ -99,15 +106,14 @@ func (s *productionOrderService) DeleteOrderByID(id int) error {
 	}
 	
 	// 如果没有关联的生产计划，继续删除订单
-	tx, err := s.db.Beginx()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-
 	if err := s.orderRepo.DeleteOrder(tx, id); err != nil {
-		return err
+		return fmt.Errorf("删除订单失败: %w", err)
 	}
 
-	return tx.Commit()
+	// 提交事务
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("提交事务失败: %w", err)
+	}
+	
+	return nil
 }
