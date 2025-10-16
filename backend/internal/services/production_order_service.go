@@ -86,6 +86,19 @@ func (s *productionOrderService) GetAllOrders(styleNumberQuery string) ([]models
 }
 
 func (s *productionOrderService) DeleteOrderByID(id int) error {
+	// 先检查是否有关联的生产计划
+	var planExists bool
+	err := s.db.Get(&planExists, `SELECT EXISTS(SELECT 1 FROM Production_Plans WHERE linked_order_id = $1)`, id)
+	if err != nil {
+		return fmt.Errorf("检查关联生产计划失败: %w", err)
+	}
+	
+	// 如果存在关联的生产计划，返回友好的错误提示
+	if planExists {
+		return fmt.Errorf("无法删除订单：请先删除与此订单关联的生产计划")
+	}
+	
+	// 如果没有关联的生产计划，继续删除订单
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)

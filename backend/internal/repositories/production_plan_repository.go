@@ -4,13 +4,14 @@ import (
 	"cutrix-backend/internal/models"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type ProductionPlanRepository interface {
 	CreatePlan(tx *sqlx.Tx, plan *models.CreateProductionPlanRequest) (*models.ProductionPlan, error)
-	UpdatePlan(tx *sqlx.Tx, planID int, plan *models.CreateProductionPlanRequest) error // <-- 新增
+	UpdatePlan(tx *sqlx.Tx, planID int, plan *models.CreateProductionPlanRequest) error
 	CreateLayout(tx *sqlx.Tx, planID int, layout *models.CreateLayout) (*models.CuttingLayout, error)
 	CreateRatios(tx *sqlx.Tx, layoutID int, ratios []models.CreateRatio) error
 	CreateTasks(tx *sqlx.Tx, styleID int, layoutID int, layoutName string, tasks []models.CreateTaskForPlan) error
@@ -26,6 +27,11 @@ type productionPlanRepository struct {
 
 func NewProductionPlanRepository(db *sqlx.DB) ProductionPlanRepository {
 	return &productionPlanRepository{db: db}
+}
+
+// 辅助函数：连接SQL占位符
+func joinPlaceholders(placeholders []string) string {
+	return strings.Join(placeholders, ", ")
 }
 
 // UpdatePlan completely replaces the layouts, ratios, and tasks for a given plan.
@@ -45,35 +51,44 @@ func (r *productionPlanRepository) UpdatePlan(tx *sqlx.Tx, planID int, req *mode
 
 	// 3. Disassociate or delete logs and then delete old tasks
 	if len(oldLayoutIDs) > 0 {
-		var taskIDsToDelete []int
-		taskQuery, taskArgs, err := sqlx.In(`SELECT task_id FROM Production_Tasks WHERE layout_id IN (?)`, oldLayoutIDs)
-		if err != nil {
-			return fmt.Errorf("failed to construct select tasks query: %w", err)
+		// 使用参数化查询替代IN查询，避免sqlx.In可能的问题
+		placeholders := make([]string, len(oldLayoutIDs))
+		args := make([]interface{}, len(oldLayoutIDs))
+		for i, id := range oldLayoutIDs {
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+			args[i] = id
 		}
-		taskQuery = tx.Rebind(taskQuery)
-		err = tx.Select(&taskIDsToDelete, taskQuery, taskArgs...)
+		
+		// 查找要删除的任务ID
+		var taskIDsToDelete []int
+		taskQuery := fmt.Sprintf("SELECT task_id FROM Production_Tasks WHERE layout_id IN (%s)", 
+			joinPlaceholders(placeholders))
+		err = tx.Select(&taskIDsToDelete, taskQuery, args...)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("failed to find tasks to delete: %w", err)
 		}
 
+		// 更新生产日志，将任务ID设为NULL
 		if len(taskIDsToDelete) > 0 {
-			logQuery, logArgs, err := sqlx.In(`UPDATE Production_Logs SET task_id = NULL WHERE task_id IN (?)`, taskIDsToDelete)
-			if err != nil {
-				return fmt.Errorf("failed to construct update logs query: %w", err)
+			logPlaceholders := make([]string, len(taskIDsToDelete))
+			logArgs := make([]interface{}, len(taskIDsToDelete))
+			for i, id := range taskIDsToDelete {
+				logPlaceholders[i] = fmt.Sprintf("$%d", i+1)
+				logArgs[i] = id
 			}
-			logQuery = tx.Rebind(logQuery)
+			
+			logQuery := fmt.Sprintf("UPDATE Production_Logs SET task_id = NULL WHERE task_id IN (%s)",
+				joinPlaceholders(logPlaceholders))
 			_, err = tx.Exec(logQuery, logArgs...)
 			if err != nil {
 				return fmt.Errorf("failed to update production_logs: %w", err)
 			}
 		}
 
-		query, args, err := sqlx.In(`DELETE FROM Production_Tasks WHERE layout_id IN (?)`, oldLayoutIDs)
-		if err != nil {
-			return fmt.Errorf("failed to construct delete tasks query: %w", err)
-		}
-		query = tx.Rebind(query)
-		_, err = tx.Exec(query, args...)
+		// 删除旧任务
+		deleteTaskQuery := fmt.Sprintf("DELETE FROM Production_Tasks WHERE layout_id IN (%s)",
+			joinPlaceholders(placeholders))
+		_, err = tx.Exec(deleteTaskQuery, args...)
 		if err != nil {
 			return fmt.Errorf("failed to delete old tasks: %w", err)
 		}
@@ -102,66 +117,81 @@ func (r *productionPlanRepository) UpdatePlan(tx *sqlx.Tx, planID int, req *mode
 	return nil
 }
 
-// ... (其他函数保持不变)
 func (r *productionPlanRepository) DeletePlan(planID int) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction for plan deletion: %w", err)
 	}
 	defer tx.Rollback()
+	
 	var layoutIDs []int
 	err = tx.Select(&layoutIDs, `SELECT layout_id FROM Cutting_Layouts WHERE plan_id = $1`, planID)
 	if err != nil {
 		return fmt.Errorf("failed to find layouts for plan: %w", err)
 	}
+	
 	if len(layoutIDs) > 0 {
-		var taskIDsToDelete []int
-		taskQuery, taskArgs, err := sqlx.In(`SELECT task_id FROM Production_Tasks WHERE layout_id IN (?)`, layoutIDs)
-		if err != nil {
-			return fmt.Errorf("failed to construct select tasks query: %w", err)
+		// 使用参数化查询替代IN查询，避免sqlx.In可能的问题
+		placeholders := make([]string, len(layoutIDs))
+		args := make([]interface{}, len(layoutIDs))
+		for i, id := range layoutIDs {
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+			args[i] = id
 		}
-		taskQuery = tx.Rebind(taskQuery)
-		err = tx.Select(&taskIDsToDelete, taskQuery, taskArgs...)
+		
+		// 查找要删除的任务ID
+		var taskIDsToDelete []int
+		taskQuery := fmt.Sprintf("SELECT task_id FROM Production_Tasks WHERE layout_id IN (%s)", 
+			joinPlaceholders(placeholders))
+		err = tx.Select(&taskIDsToDelete, taskQuery, args...)
 		if err != nil && err != sql.ErrNoRows {
 			return fmt.Errorf("failed to find tasks to delete: %w", err)
 		}
 
+		// 更新生产日志，将任务ID设为NULL
 		if len(taskIDsToDelete) > 0 {
-			logQuery, logArgs, err := sqlx.In(`UPDATE Production_Logs SET task_id = NULL WHERE task_id IN (?)`, taskIDsToDelete)
-			if err != nil {
-				return fmt.Errorf("failed to construct update logs query: %w", err)
+			logPlaceholders := make([]string, len(taskIDsToDelete))
+			logArgs := make([]interface{}, len(taskIDsToDelete))
+			for i, id := range taskIDsToDelete {
+				logPlaceholders[i] = fmt.Sprintf("$%d", i+1)
+				logArgs[i] = id
 			}
-			logQuery = tx.Rebind(logQuery)
+			
+			logQuery := fmt.Sprintf("UPDATE Production_Logs SET task_id = NULL WHERE task_id IN (%s)",
+				joinPlaceholders(logPlaceholders))
 			_, err = tx.Exec(logQuery, logArgs...)
 			if err != nil {
 				return fmt.Errorf("failed to update production_logs: %w", err)
 			}
 		}
 
-		query, args, err := sqlx.In(`DELETE FROM Production_Tasks WHERE layout_id IN (?)`, layoutIDs)
-		if err != nil {
-			return fmt.Errorf("failed to construct delete tasks query: %w", err)
-		}
-		query = tx.Rebind(query)
-		_, err = tx.Exec(query, args...)
+		// 删除旧任务
+		deleteTaskQuery := fmt.Sprintf("DELETE FROM Production_Tasks WHERE layout_id IN (%s)",
+			joinPlaceholders(placeholders))
+		_, err = tx.Exec(deleteTaskQuery, args...)
 		if err != nil {
 			return fmt.Errorf("failed to delete tasks for layouts: %w", err)
 		}
 	}
+	
 	planQuery := `DELETE FROM Production_Plans WHERE plan_id = $1`
 	result, err := tx.Exec(planQuery, planID)
 	if err != nil {
 		return fmt.Errorf("failed to delete plan: %w", err)
 	}
+	
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("failed to check rows affected for plan deletion: %w", err)
 	}
+	
 	if rowsAffected == 0 {
 		return fmt.Errorf("plan not found or already deleted")
 	}
+	
 	return tx.Commit()
 }
+
 func (r *productionPlanRepository) GetPlanByOrderID(orderID int) (*models.ProductionPlan, error) {
 	var plan models.ProductionPlan
 	query := `SELECT * FROM Production_Plans WHERE linked_order_id = $1 LIMIT 1`
@@ -174,6 +204,7 @@ func (r *productionPlanRepository) GetPlanByOrderID(orderID int) (*models.Produc
 	}
 	return &plan, nil
 }
+
 func (r *productionPlanRepository) CreatePlan(tx *sqlx.Tx, req *models.CreateProductionPlanRequest) (*models.ProductionPlan, error) {
 	query := `INSERT INTO Production_Plans (plan_name, style_id, linked_order_id) VALUES ($1, $2, $3) 
 	          RETURNING plan_id, plan_name, style_id, linked_order_id, created_at`
@@ -184,6 +215,7 @@ func (r *productionPlanRepository) CreatePlan(tx *sqlx.Tx, req *models.CreatePro
 	}
 	return &plan, nil
 }
+
 func (r *productionPlanRepository) CreateLayout(tx *sqlx.Tx, planID int, layoutReq *models.CreateLayout) (*models.CuttingLayout, error) {
 	query := `INSERT INTO Cutting_Layouts (plan_id, layout_name, description) VALUES ($1, $2, $3)
 	          RETURNING layout_id, plan_id, layout_name, description`
@@ -194,6 +226,7 @@ func (r *productionPlanRepository) CreateLayout(tx *sqlx.Tx, planID int, layoutR
 	}
 	return &layout, nil
 }
+
 func (r *productionPlanRepository) CreateRatios(tx *sqlx.Tx, layoutID int, ratios []models.CreateRatio) error {
 	query := `INSERT INTO Layout_Size_Ratios (layout_id, size, ratio) VALUES ($1, $2, $3)`
 	stmt, err := tx.Preparex(query)
@@ -201,6 +234,7 @@ func (r *productionPlanRepository) CreateRatios(tx *sqlx.Tx, layoutID int, ratio
 		return fmt.Errorf("failed to prepare ratio statement: %w", err)
 	}
 	defer stmt.Close()
+	
 	for _, ratio := range ratios {
 		if _, err := stmt.Exec(layoutID, ratio.Size, ratio.Ratio); err != nil {
 			return fmt.Errorf("failed to insert ratio: %w", err)
@@ -208,6 +242,7 @@ func (r *productionPlanRepository) CreateRatios(tx *sqlx.Tx, layoutID int, ratio
 	}
 	return nil
 }
+
 func (r *productionPlanRepository) CreateTasks(tx *sqlx.Tx, styleID int, layoutID int, layoutName string, tasks []models.CreateTaskForPlan) error {
 	query := `INSERT INTO Production_Tasks (style_id, layout_id, layout_name, color, planned_layers) 
 	          VALUES ($1, $2, $3, $4, $5)`
@@ -216,6 +251,7 @@ func (r *productionPlanRepository) CreateTasks(tx *sqlx.Tx, styleID int, layoutI
 		return fmt.Errorf("failed to prepare task statement: %w", err)
 	}
 	defer stmt.Close()
+	
 	for _, task := range tasks {
 		if _, err := stmt.Exec(styleID, layoutID, layoutName, task.Color, task.PlannedLayers); err != nil {
 			return fmt.Errorf("failed to insert task: %w", err)
@@ -223,25 +259,30 @@ func (r *productionPlanRepository) CreateTasks(tx *sqlx.Tx, styleID int, layoutI
 	}
 	return nil
 }
+
 func (r *productionPlanRepository) GetPlanWithDetails(planID int) (*models.ProductionPlan, error) {
 	var plan models.ProductionPlan
 	err := r.db.Get(&plan, `SELECT * FROM Production_Plans WHERE plan_id = $1`, planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plan: %w", err)
 	}
+	
 	var layouts []models.CuttingLayout
 	err = r.db.Select(&layouts, `SELECT * FROM Cutting_Layouts WHERE plan_id = $1 ORDER BY layout_id`, planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get layouts for plan: %w", err)
 	}
+	
 	for i := range layouts {
 		layoutID := layouts[i].LayoutID
+		
 		var ratios []models.LayoutSizeRatio
 		err = r.db.Select(&ratios, `SELECT * FROM Layout_Size_Ratios WHERE layout_id = $1`, layoutID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get ratios for layout %d: %w", layoutID, err)
 		}
 		layouts[i].Ratios = ratios
+		
 		var tasks []models.ProductionTask
 		err = r.db.Select(&tasks, `SELECT * FROM Production_Tasks WHERE layout_id = $1`, layoutID)
 		if err != nil {
@@ -249,9 +290,11 @@ func (r *productionPlanRepository) GetPlanWithDetails(planID int) (*models.Produ
 		}
 		layouts[i].Tasks = tasks
 	}
+	
 	plan.Layouts = layouts
 	return &plan, nil
 }
+
 func (r *productionPlanRepository) GetAllPlans(searchQuery string) ([]models.ProductionPlan, error) {
 	var plans []models.ProductionPlan
 
