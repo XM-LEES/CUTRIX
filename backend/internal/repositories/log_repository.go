@@ -31,7 +31,7 @@ func NewLogRepository(db *sqlx.DB) LogRepository {
 
 func (r *logRepository) Create(log *models.ProductionLog) error {
 	query := `INSERT INTO Production_Logs (task_id, parent_log_id, worker_id, process_name, layers_completed, log_time) 
-	          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING log_id`
+	          VALUES ($1, $2, $3, $4, $5, $6) RETURNING log_id`
 
 	err := r.db.QueryRow(query, log.TaskID, log.ParentLogID, log.WorkerID, log.ProcessName, log.LayersCompleted, log.LogTime).Scan(&log.LogID)
 	if err != nil {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"cutrix-backend/internal/models"
 	"cutrix-backend/internal/services"
@@ -10,31 +11,31 @@ import (
 )
 
 type LogHandler struct {
-	logService *services.LogService
+	logService services.LogService
 }
 
-func NewLogHandler(logService *services.LogService) *LogHandler {
+func NewLogHandler(logService services.LogService) *LogHandler {
 	return &LogHandler{
 		logService: logService,
 	}
 }
 
 func (h *LogHandler) CreateProductionLog(c *gin.Context) {
-	var req models.CreateProductionLogRequest
+	var req models.CreateLogRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{
 			Success: false,
-			Message: "Invalid request body",
+			Message: "无效的请求数据",
 			Error:   err.Error(),
 		})
 		return
 	}
 
-	log, err := h.logService.CreateProductionLog(&req)
+	err := h.logService.CreateLog(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Success: false,
-			Message: "Failed to create production log",
+			Message: "创建生产记录失败",
 			Error:   err.Error(),
 		})
 		return
@@ -42,17 +43,27 @@ func (h *LogHandler) CreateProductionLog(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, models.APIResponse{
 		Success: true,
-		Message: "Production log created successfully",
-		Data:    log,
+		Message: "生产记录创建成功",
 	})
 }
 
-func (h *LogHandler) GetProductionLogs(c *gin.Context) {
-	logs, err := h.logService.GetProductionLogs()
+func (h *LogHandler) GetLogsByTaskID(c *gin.Context) {
+	taskIDStr := c.Param("taskID")
+	taskID, err := strconv.Atoi(taskIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: "无效的任务ID",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	logs, err := h.logService.GetLogsByTaskID(taskID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			Success: false,
-			Message: "Failed to retrieve production logs",
+			Message: "获取生产记录失败",
 			Error:   err.Error(),
 		})
 		return
@@ -60,7 +71,7 @@ func (h *LogHandler) GetProductionLogs(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.APIResponse{
 		Success: true,
-		Message: "Production logs retrieved successfully",
+		Message: "获取生产记录成功",
 		Data:    logs,
 	})
 }

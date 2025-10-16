@@ -116,7 +116,7 @@ func main() {
 		logs := api.Group("/production-logs")
 		{
 			logs.POST("", logHandler.CreateProductionLog)
-			logs.GET("", logHandler.GetProductionLogs)
+			logs.GET("/task/:taskID", logHandler.GetLogsByTaskID)
 		}
 
 		// 员工管理
